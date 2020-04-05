@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "investments"
+version = "0.1.5"
+description = "Analysis of Interactive Brokers reports for tax reporting in Russia"
+license = "MIT"
+authors = ["Maxim Andreev <andreevmaxim@gmail.com>"]
+readme = "README.md"
+repository = "https://github.com/cdump/investments"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Office/Business :: Financial :: Accounting",
+    "Topic :: Office/Business :: Financial :: Investment"
+]
+
+[tool.poetry.scripts]
+ibtax = "investments.ibtax.ibtax:main"
+
+[tool.poetry.dependencies]
+python = "^3.6.1 || ^3.7"
+pandas = "^1.0.3"
+requests = "^2.23.0"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.mypy_cache/
+cbrates_*.cache
+reports/
+dist/
