@@ -6,6 +6,7 @@ from investments.ticker import Ticker
 
 
 class Dividend(NamedTuple):
+    dtype: str
     ticker: Ticker
     date: datetime.date
     amount: Money

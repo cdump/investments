@@ -1,6 +1,8 @@
 import csv
 import datetime
-from typing import Dict, Iterator, List
+import logging
+import re
+from typing import Dict, Iterator, List, Tuple
 
 from investments.currency import Currency
 from investments.dividend import Dividend
@@ -15,6 +17,13 @@ def _parse_datetime(strval: str):
 
 def _parse_date(strval: str):
     return datetime.datetime.strptime(strval, '%Y-%m-%d').date()
+
+
+def _parse_dividend_description(description: str) -> Tuple[str, str]:
+    m = re.match(r'^(\w+)\(\w+\) (Cash Dividend|Payment in Lieu of Dividend)', description)
+    if m is None:
+        raise Exception(f'unsupported dividend description {description}')
+    return m.group(1), m.group(2)
 
 
 def _parse_tickerkind(strval: str):
@@ -186,8 +195,8 @@ class InteractiveBrokersReportParser(object):
         ))
 
     def _parse_withholding_tax(self, f: Dict[str, str]):
-        name = f['Description'].split('(')[0].strip(' ')
-        ticker = self._tickers.get_ticker(name, TickerKind.Stock)
+        div_symbol, div_type = _parse_dividend_description(f['Description'])
+        ticker = self._tickers.get_ticker(div_symbol, TickerKind.Stock)
         date = _parse_date(f['Date'])
         tax_amount = Money(f['Amount'], Currency.parse(f['Currency']))
 
@@ -195,10 +204,11 @@ class InteractiveBrokersReportParser(object):
         tax_amount *= -1
         found = False
         for i, v in enumerate(self._dividends):
-            if v.ticker == ticker and v.date == date:
+            if v.ticker == ticker and v.date == date and v.dtype == div_type:
                 assert v.tax.amount == 0
                 assert v.amount.currency == tax_amount.currency
                 self._dividends[i] = Dividend(
+                    dtype=v.dtype,
                     ticker=v.ticker,
                     date=v.date,
                     amount=v.amount,
@@ -211,13 +221,14 @@ class InteractiveBrokersReportParser(object):
             raise Exception(f'dividend not found for {ticker} on {date}')
 
     def _parse_dividends(self, f: Dict[str, str]):
-        name = f['Description'].split('(')[0].strip(' ')
-        ticker = self._tickers.get_ticker(name, TickerKind.Stock)
+        div_symbol, div_type = _parse_dividend_description(f['Description'])
+        ticker = self._tickers.get_ticker(div_symbol, TickerKind.Stock)
         date = _parse_date(f['Date'])
         amount = Money(f['Amount'], Currency.parse(f['Currency']))
 
         assert amount.amount > 0
         self._dividends.append(Dividend(
+            dtype=div_type,
             ticker=ticker,
             date=date,
             amount=amount,
