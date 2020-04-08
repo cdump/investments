@@ -31,6 +31,8 @@ def _parse_tickerkind(strval: str):
         return TickerKind.Stock
     if strval == 'Equity and Index Options':
         return TickerKind.Option
+    if strval == 'Forex':
+        return TickerKind.Forex
     raise ValueError(strval)
 
 
@@ -158,7 +160,7 @@ class InteractiveBrokersReportParser(object):
                 nrparser.parse_header(row[2:])
                 continue
 
-            if row[1] in {'Total', 'SubTotal'} or row[2] == 'Total':
+            if row[1] in {'Total', 'SubTotal'} or row[2].startswith('Total'):
                 continue
 
             if row[1] == 'Data':
@@ -176,7 +178,12 @@ class InteractiveBrokersReportParser(object):
         )
 
     def _parse_trades(self, f: Dict[str, str]):
-        ticker = self._tickers.get_ticker(f['Symbol'], _parse_tickerkind(f['Asset Category']))
+        ticker_kind = _parse_tickerkind(f['Asset Category'])
+        if ticker_kind == TickerKind.Forex:
+            logging.warning(f'Skipping FOREX trade (not supported yet), your final report may be incorrect! {f}')
+            return
+
+        ticker = self._tickers.get_ticker(f['Symbol'], ticker_kind)
         quantity_multiplier = self._tickers.get_multiplier(ticker)
         currency = Currency.parse(f['Currency'])
 
