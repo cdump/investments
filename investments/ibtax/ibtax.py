@@ -97,6 +97,10 @@ def main():
     parser.add_argument('--cache-dir', type=str, default='.', help='directory for caching (CBR RUB exchange rates)')
     args = parser.parse_args()
 
+    if os.path.abspath(args.activity_reports_dir) == os.path.abspath(args.confirmation_reports_dir):
+        print('--activity-reports-dir and --confirmation-reports-dir MUST be different directories')
+        return
+
     p = InteractiveBrokersReportParser()
 
     activity_reports = csvs_in_dir(args.activity_reports_dir)

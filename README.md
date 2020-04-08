@@ -18,6 +18,8 @@ $ pip install investments --user
 ## Запуск
 Запустить `ibtax` указав в `--activity-reports-dir` и `--confirmation-reports-dir` директории отчетами в формате `.csv` (см. *Подготовка отчетов Interactive Brokers*)
 
+Важно, чтобы csv-отчеты `activity` и `confirmation` были в разных директориях!
+
 ## Подготовка отчетов Interactive Brokers
 Для работы нужно выгрузить из [личного кабинета](https://www.interactivebrokers.co.uk/sso/Login) два типа отчетов: *Activity statement* (сделки, дивиденды, информация по инструментам и т.п.) и *Trade Confirmation* (settlement date, необходимая для правильной конвертации сумм по курсу ЦБ)
 
