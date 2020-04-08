@@ -11,7 +11,7 @@ class Currency(Enum):
             return Currency.USD
         if strval in {'₽', 'RUB'}:
             return Currency.RUB
-        raise ValueError
+        raise ValueError(strval)
 
     def __str__(self):
         if self == Currency.USD:

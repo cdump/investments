@@ -65,7 +65,7 @@ class TickersStorage(object):
             assert dtt.kind == kind
             return dtt
 
-        raise KeyError
+        raise KeyError(name)
 
     def get_multiplier(self, ticker: Ticker):
         return self._multipliers[ticker]
