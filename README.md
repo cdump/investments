@@ -12,9 +12,9 @@
 *Пример отчета:*
 ![ibtax report example](./images/ibtax_2016.jpg)
 
-## Установка
+## Установка/обновление
 ```
-$ pip install investments --user
+$ pip install investments --upgrade --user
 ```
 или с помощью [poetry](https://python-poetry.org/)
 
