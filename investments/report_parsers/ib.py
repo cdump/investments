@@ -20,9 +20,9 @@ def _parse_date(strval: str):
 
 
 def _parse_dividend_description(description: str) -> Tuple[str, str]:
-    m = re.match(r'^(\w+)\(\w+\) (Cash Dividend|Payment in Lieu of Dividend)', description)
+    m = re.match(r'^(\w+)\s*\(\w+\) (Cash Dividend|Payment in Lieu of Dividend)', description)
     if m is None:
-        raise Exception(f'unsupported dividend description {description}')
+        raise Exception(f'unsupported dividend description "{description}"')
     return m.group(1), m.group(2)
 
 
