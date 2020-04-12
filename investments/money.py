@@ -29,22 +29,34 @@ class Money(object):
     def __str__(self):
         return f'{self._amount}{self._currency}'
 
+    def __eq__(self, other) -> bool:
+        if isinstance(other, Money):
+            return self.amount == other.amount and self.currency == other.currency
+        return False
+
     def __add__(self, other: 'Money') -> 'Money':
         if not isinstance(other, Money):
             return NotImplemented
-        assert self._currency == other.currency
+        if self._currency != other.currency:
+            raise TypeError(f'different currencies: {self._currency} & {other.currency}')
         return Money(self._amount + other.amount, self._currency)
 
     def __sub__(self, other: 'Money') -> 'Money':
         if not isinstance(other, Money):
             return NotImplemented
-        assert self._currency == other.currency
+        if self._currency != other.currency:
+            raise TypeError(f'different currencies: {self._currency} & {other.currency}')
         return Money(self._amount - other.amount, self._currency)
 
     def __mul__(self, mul: int):
         if isinstance(mul, int):
             return Money(self._amount * mul, self._currency)
         return NotImplemented
+
+    def __truediv__(self, d: int):
+        if not isinstance(d, int):
+            return NotImplemented
+        return Money(self._amount / d, self._currency)
 
     def __rmul__(self, mul: int):
         return self.__mul__(mul)
