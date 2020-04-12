@@ -35,12 +35,6 @@ jobs:
         poetry build
         echo ::set-output name=wheel_name::investments-${GITHUB_REF#refs/tags/}-py3-none-any.whl
 
-    # - name: Upload artifact
-    #   uses: actions/upload-artifact@v1
-    #   with:
-    #     name: investments-${{ steps.tag.outputs.tag }}-py3-none-any.whl
-    #     path: releases/poetry-${{ steps.tag.outputs.tag }}-linux.tar.gz
-
     - name: Create Release
       id: create_release
       uses: actions/create-release@latest
@@ -60,5 +54,11 @@ jobs:
       with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_name: ${{ steps.build.outputs.wheel_name }}
-          asset_path: dists/${{ steps.build.outputs.wheel_name }}
+          asset_path: dist/${{ steps.build.outputs.wheel_name }}
           asset_content_type: application/x-wheel+zip
+
+    - name: Publish to PyPI
+      env:
+        POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+      run: |
+        poetry publish
