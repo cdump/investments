@@ -8,6 +8,7 @@ class TickerKind(Enum):
     Futures = 3
     Bond = 4
     Forex = 5
+    Rdr = 6
 
     def __str__(self):
         return self.name
