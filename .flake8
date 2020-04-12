@@ -33,6 +33,7 @@ ignore =
     E800, # commented out code
     N814, # camelcase imported as constant
     WPS115, # upper-case constant in a class
+    WPS218, # too many asserts, useful for tests/
     WPS301, # dotted raw import
     WPS305, # f-strings
     WPS317, # multilines
