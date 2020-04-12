@@ -30,7 +30,7 @@ def prepare_trades_report(df: pandas.DataFrame, usdrub_rates_df: pandas.DataFram
     profit = df.groupby('N')['profit_rub'].sum().reset_index().set_index('N')
     df = df.join(profit, how='left', on='N', lsuffix='del')
     df.drop(columns=['profit_rubdel'], axis=0, inplace=True)
-    df.loc[df['quantity'] >= 0, 'profit_rub'] = Money(0, Currency.RUB)
+    df.loc[~df.index.isin(df.groupby('N')['datetime'].idxmax()), 'profit_rub'] = Money(0, Currency.RUB)
 
     return df
 
