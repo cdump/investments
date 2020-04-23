@@ -29,9 +29,9 @@ class _TradesFIFO(object):
 
     def put(self, quantity: int, trade: Trade):
         """
-        Puts trade to the storage
+        Put trade to the storage.
 
-	Args:
+        Args:
             quantity (int): The real quantity of the trade, >0 for BUY trades & <0 for SELL trades
             trade (Trade): Base trade, quantity field not used
         """
@@ -47,11 +47,11 @@ class _TradesFIFO(object):
 
     def match(self, quantity: int, ticker: Ticker) -> Tuple[Optional[Trade], int]:
         """
-	Try to match trade
+        Try to match trade.
 
-	Args:
+        Args:
             quantity (int): The real quantity of the trade, >0 for BUY trades & <0 for SELL trades
-            trade (Trade): Base trade, quantity field not used
+            ticker (Ticker): Ticker to match
 
         Returns:
             matched_trade: A matched trade
@@ -76,7 +76,12 @@ class _TradesFIFO(object):
         return front['trade'], q
 
     def unmatched(self) -> List[Dict[str, Any]]:
-        """ Base info about unmatched trades (final portfolio) """
+        """
+        Return basic information about unmatched trades (final portfolio).
+
+        Returns:
+            portfolio: Portfolio
+        """
         ret = []
         for ticker, trades in self._portfolio.items():
             quantity = sum(v['quantity'] for v in trades)
