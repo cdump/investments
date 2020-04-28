@@ -20,7 +20,7 @@ def _parse_date(strval: str):
 
 
 def _parse_dividend_description(description: str) -> Tuple[str, str]:
-    m = re.match(r'^(\w+)\s*\(\w+\) (Cash Dividend|Payment in Lieu of Dividend)', description)
+    m = re.match(r'^(\w+)\s*\(\w+\) (Cash Dividend|Payment in Lieu of Dividend|Choice Dividend)', description)
     if m is None:
         raise Exception(f'unsupported dividend description "{description}"')
     return m.group(1), m.group(2)
@@ -139,6 +139,7 @@ class InteractiveBrokersReportParser(object):
 
         # 4. sort
         self._trades.sort(key=lambda x: x.datetime)
+        self._dividends = [x for x in self._dividends if x.amount.amount != 0 or x.tax.amount != 0]  # remove reversed dividends
         self._dividends.sort(key=lambda x: x.date)
         self._deposits_and_withdrawals.sort(key=lambda x: x[0])
 
@@ -219,19 +220,17 @@ class InteractiveBrokersReportParser(object):
         date = _parse_date(f['Date'])
         tax_amount = Money(f['Amount'], Currency.parse(f['Currency']))
 
-        assert tax_amount.amount < 0
         tax_amount *= -1
         found = False
         for i, v in enumerate(self._dividends):
             if v.ticker == ticker and v.date == date and v.dtype == div_type:
-                assert v.tax.amount == 0
                 assert v.amount.currency == tax_amount.currency
                 self._dividends[i] = Dividend(
                     dtype=v.dtype,
                     ticker=v.ticker,
                     date=v.date,
                     amount=v.amount,
-                    tax=tax_amount,
+                    tax=v.tax + tax_amount,
                 )
                 found = True
                 break
@@ -245,7 +244,20 @@ class InteractiveBrokersReportParser(object):
         date = _parse_date(f['Date'])
         amount = Money(f['Amount'], Currency.parse(f['Currency']))
 
-        assert amount.amount > 0
+        if amount.amount < 0:
+            assert 'Reversal' in f['Description'], f'unsupported dividend with negative amount: {f}'
+            for i, v in enumerate(self._dividends):
+                if v.dtype == div_type and v.ticker == ticker and v.date == date and v.amount == -1 * amount:
+                    self._dividends[i] = Dividend(
+                        dtype=div_type,
+                        ticker=ticker,
+                        date=date,
+                        amount=amount + v.amount,
+                        tax=v.tax,
+                    )
+                    return
+
+        assert amount.amount > 0, f'unsupported dividend with non positive amount: {f}'
         self._dividends.append(Dividend(
             dtype=div_type,
             ticker=ticker,
