@@ -51,19 +51,30 @@ class NamedRowsParser(object):
 class TickersStorage(object):
     def __init__(self):
         self._tickers = set()
+        self._conid_to_ticker = {}
         self._description_to_ticker = {}
         self._multipliers = {}
 
-    def put(self, *, symbol: str, description: str, kind: TickerKind, multiplier: int):
+    def put(self, *, symbol: str, conid: str, description: str, kind: TickerKind, multiplier: int):
         ticker = Ticker(symbol, kind)
         if ticker not in self._tickers:
+            assert conid not in self._conid_to_ticker
             assert description not in self._description_to_ticker
             assert ticker not in self._multipliers
             self._tickers.add(ticker)
-            self._multipliers[ticker] = multiplier
+            self._conid_to_ticker[conid] = ticker
             self._description_to_ticker[description] = ticker
+            self._multipliers[ticker] = multiplier
             return
-        assert self._description_to_ticker[description] == ticker
+
+        assert self._conid_to_ticker[conid] == ticker
+
+        description_ticker = self._description_to_ticker.get(description)
+        if description_ticker is not None:
+            assert description_ticker == ticker
+        else:
+            self._description_to_ticker[description] = ticker
+
         assert self._multipliers[ticker] == multiplier
 
     def get_ticker(self, name: str, kind: TickerKind):
@@ -172,6 +183,7 @@ class InteractiveBrokersReportParser(object):
     def _parse_instrument_information(self, f: Dict[str, str]):
         self._tickers.put(
             symbol=f['Symbol'],
+            conid=f['Conid'],
             description=f['Description'],
             kind=_parse_tickerkind(f['Asset Category']),
             multiplier=int(f['Multiplier']),

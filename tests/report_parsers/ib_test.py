@@ -3,6 +3,7 @@ import csv
 from investments.currency import Currency
 from investments.money import Money
 from investments.report_parsers.ib import InteractiveBrokersReportParser
+from investments.ticker import TickerKind
 
 
 def test_parse_dividends():
@@ -31,3 +32,22 @@ Dividends,Data,Total,,,777.11"""
     assert d[1].amount == Money(8, Currency.USD)
     assert d[2].amount == Money(1.61, Currency.USD)
     assert d[3].amount == Money(2.42, Currency.USD)
+
+
+def test_parse_ticker_description_changed():
+    p = InteractiveBrokersReportParser()
+
+    lines = """Financial Instrument Information,Header,Asset Category,Symbol,Description,Conid,Security ID,Multiplier,Type,Code
+Financial Instrument Information,Data,Stocks,VNQ,VANGUARD REIT ETF,31230302,922908553,1,ETF,
+Financial Instrument Information,Data,Stocks,VNQ,VANGUARD REAL ESTATE ETF,31230302,US9229085538,1,ETF,"""
+
+    lines = lines.split('\n')
+    p._real_parse_activity_csv(csv.reader(lines, delimiter=','), {
+        'Financial Instrument Information': p._parse_instrument_information,
+    })
+
+    a = p._tickers.get_ticker('VANGUARD REIT ETF', TickerKind.Stock)
+    assert a.symbol == 'VNQ'
+
+    b = p._tickers.get_ticker('VANGUARD REAL ESTATE ETF', TickerKind.Stock)
+    assert b.symbol == 'VNQ'
