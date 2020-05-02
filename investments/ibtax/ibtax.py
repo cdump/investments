@@ -1,6 +1,6 @@
 import argparse
 import os
-from typing import Optional
+from typing import List, Optional
 
 import pandas
 
@@ -48,13 +48,15 @@ def prepare_dividends_report(dividends, usdrub_rates_df: pandas.DataFrame):
     return df
 
 
-def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.DataFrame], portfolio):
+def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.DataFrame], portfolio, filter_years: List[int]):
     years = set()
     for report in (trades, dividends):
         if report is not None:
             years |= set(report['tax_year'].unique())
 
     for year in years:  # noqa: WPS426
+        if filter_years and (year not in filter_years):
+            continue
         print('______' * 8, f'  {year}  ', '______' * 8, '\n')
 
         if dividends is not None:
@@ -74,9 +76,16 @@ def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.D
             print(trades_year.set_index(['N', 'ticker', 'date']).to_string())
             print('\n\n')
 
-            print('>>> TRADES PROFIT BEFORE TAXES <<<')
-            trades_profit = trades_year.groupby(lambda idx: trades_year.loc[idx, 'ticker'].kind)['profit_rub'].sum()
-            print(trades_profit.to_string())
+            print('>>> TRADES RESULTS BEFORE TAXES <<<')
+            tp = trades_year.groupby(lambda idx: (
+                trades_year.loc[idx, 'ticker'].kind,
+                'expenses' if trades_year.loc[idx, 'quantity'] > 0 else 'income',
+            ))['total_rub'].sum().reset_index()
+            tp = tp['index'].apply(pandas.Series).join(tp).pivot(index=0, columns=1, values='total_rub')
+            tp.index.name = ''
+            tp.columns.name = ''
+            tp['profit'] = tp['income'] - tp['expenses']
+            print(tp.reset_index().to_string())
 
         print('______' * 8, f'EOF {year}', '______' * 8, '\n\n\n')
 
@@ -98,9 +107,10 @@ def csvs_in_dir(directory: str):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--activity-reports-dir', type=str, required=True, help='directory with InteractiveBrokers .csv reports')
-    parser.add_argument('--confirmation-reports-dir', type=str, required=True, help='directory with InteractiveBrokers .csv reports')
+    parser.add_argument('--activity-reports-dir', type=str, required=True, help='directory with InteractiveBrokers .csv activity reports')
+    parser.add_argument('--confirmation-reports-dir', type=str, required=True, help='directory with InteractiveBrokers .csv confirmation reports')
     parser.add_argument('--cache-dir', type=str, default='.', help='directory for caching (CBR RUB exchange rates)')
+    parser.add_argument('--years', type=lambda x: [int(v.strip()) for v in x.split(',')], default=[], help='comma separated years for final report, omit for all')
     args = parser.parse_args()
 
     if os.path.abspath(args.activity_reports_dir) == os.path.abspath(args.confirmation_reports_dir):
@@ -144,7 +154,7 @@ def main():
     else:
         trades_report = None
 
-    show_report(trades_report, dividends_report, portfolio)
+    show_report(trades_report, dividends_report, portfolio, args.years)
 
 
 if __name__ == '__main__':
