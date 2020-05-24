@@ -20,10 +20,6 @@ def test_money():
     with pytest.raises(TypeError):
         r = rub1 < usd7
 
-    r = rub1 + 0
-    with pytest.raises(TypeError):
-        r = rub1 + 3
-
     with pytest.raises(TypeError):
         r = usd1 + rub3
 
@@ -37,6 +33,35 @@ def test_money():
     r = rub5 - rub3
     assert r.amount == 2
     assert r.currency == Currency.RUB
+
+
+def test_money_zero():
+    rub3 = Money(3, Currency.RUB)
+
+    r = rub3 + 0
+    assert r == rub3
+
+    r = 0 + rub3
+    assert r == rub3
+
+    r = rub3 - 0
+    assert r == rub3
+
+    r = 0 - rub3
+    assert r.amount == -1 * rub3.amount
+    assert r == -1 * rub3
+
+    with pytest.raises(TypeError):
+        r = rub3 + 3
+
+    with pytest.raises(TypeError):
+        r = 3 + rub3
+
+    with pytest.raises(TypeError):
+        r = rub3 - 3
+
+    with pytest.raises(TypeError):
+        r = 3 - rub3
 
 
 def test_money_float():

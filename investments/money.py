@@ -5,7 +5,7 @@ from investments.currency import Currency
 
 
 class Money(object):
-    def __init__(self, amount: Union[Decimal, str, float], currency: Currency):
+    def __init__(self, amount: Union[Decimal, str, float, int], currency: Currency):
         self._amount = amount if isinstance(amount, Decimal) else Decimal(str(amount))
         self._currency = currency
 
@@ -55,11 +55,16 @@ class Money(object):
         return self.__add__(other)
 
     def __sub__(self, other) -> 'Money':
+        if isinstance(other, int) and other == 0:
+            return self
         if not isinstance(other, Money):
             return NotImplemented
         if self._currency != other.currency:
             raise TypeError(f'different currencies: {self._currency} & {other.currency}')
         return Money(self._amount - other.amount, self._currency)
+
+    def __rsub__(self, other) -> 'Money':
+        return -1 * self.__sub__(other)
 
     def __mul__(self, mul):
         if isinstance(mul, int):
