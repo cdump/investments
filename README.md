@@ -1,4 +1,9 @@
 # Investments
+Библиотека для анализа брокерских отчетов + утилита для подготовки налоговой отчетности
+
+![Tests status](https://github.com/cdump/investments/workflows/tests/badge.svg)
+
+# ibtax
 Расчет прибыли Interactive Brokers для уплаты налогов для резидентов РФ
 
 - расчет сделок по методу ФИФО, учет даты расчетов (settle date)
