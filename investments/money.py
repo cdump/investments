@@ -4,7 +4,7 @@ from typing import Union
 from investments.currency import Currency
 
 
-class Money(object):
+class Money:
     def __init__(self, amount: Union[Decimal, str, float, int], currency: Currency):
         self._amount = amount if isinstance(amount, Decimal) else Decimal(str(amount))
         self._currency = currency

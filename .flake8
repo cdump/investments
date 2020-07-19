@@ -17,7 +17,10 @@ max-cognitive-score = 24
 max-cognitive-average = 24
 
 # magic methods includes
-max-methods = 15
+max-methods = 16
+
+# function arguments
+max-arguments = 8
 
 max-expressions = 15
 
@@ -36,6 +39,7 @@ ignore =
     WPS218, # too many asserts, useful for tests/
     WPS301, # dotted raw import
     WPS305, # f-strings
+    WPS306, # class without a base class
     WPS317, # multilines
     WPS323, # '%' strings, too many false-positives (strptime, ...)
     WPS420, # allow 'pass' (but also 'global','local' & 'del')

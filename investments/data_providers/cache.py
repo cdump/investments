@@ -5,7 +5,7 @@ from typing import Optional
 import pandas  # type: ignore
 
 
-class DataFrameCache(object):
+class DataFrameCache:
     def __init__(self, cache_dir: Optional[str], cache_file: str, ttl: datetime.timedelta):
         if cache_dir is None:
             self._cache_file = None

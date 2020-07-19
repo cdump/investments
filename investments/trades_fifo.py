@@ -23,7 +23,7 @@ def sign(v: int) -> int:
     return -1 if v < 0 else 1
 
 
-class _TradesFIFO(object):
+class _TradesFIFO:
     def __init__(self):
         self._portfolio = defaultdict(list)
 

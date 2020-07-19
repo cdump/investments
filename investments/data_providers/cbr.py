@@ -10,7 +10,7 @@ from investments.data_providers.cache import DataFrameCache
 from investments.money import Money
 
 
-class ExchangeRatesRUB(object):
+class ExchangeRatesRUB:
     def __init__(self, year_from: int = 2000, cache_dir: str = None):
         cache = DataFrameCache(cache_dir, f'cbrates_since{year_from}.cache', datetime.timedelta(days=1))
         df = cache.get()

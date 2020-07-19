@@ -36,7 +36,7 @@ def _parse_tickerkind(strval: str):
     raise ValueError(strval)
 
 
-class NamedRowsParser(object):
+class NamedRowsParser:
     def __init__(self):
         self._fields = []
 
@@ -48,7 +48,7 @@ class NamedRowsParser(object):
         return {k: v for k, v in zip(self._fields, row)}
 
 
-class TickersStorage(object):
+class TickersStorage:
     def __init__(self):
         self._tickers = set()
         self._conid_to_ticker = {}
@@ -93,7 +93,7 @@ class TickersStorage(object):
         return self._multipliers[ticker]
 
 
-class InteractiveBrokersReportParser(object):
+class InteractiveBrokersReportParser:
     def __init__(self):
         self._trades = []
         self._dividends = []
