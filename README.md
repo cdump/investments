@@ -3,7 +3,13 @@
 
 ![Tests status](https://github.com/cdump/investments/workflows/tests/badge.svg)
 
-# ibtax
+## Установка/обновление
+```
+$ pip install investments --upgrade --user
+```
+или с помощью [poetry](https://python-poetry.org/)
+
+## Утилита ibtax
 Расчет прибыли Interactive Brokers для уплаты налогов для резидентов РФ
 
 - расчет сделок по методу ФИФО, учет даты расчетов (settle date)
@@ -17,21 +23,16 @@
 *Пример отчета:*
 ![ibtax report example](./images/ibtax_2016.jpg)
 
-## Установка/обновление
-```
-$ pip install investments --upgrade --user
-```
-или с помощью [poetry](https://python-poetry.org/)
 
-## Запуск
+### Запуск
 Запустить `ibtax` указав в `--activity-reports-dir` и `--confirmation-reports-dir` директории отчетами в формате `.csv` (см. *Подготовка отчетов Interactive Brokers*)
 
 Важно, чтобы csv-отчеты `activity` и `confirmation` были в разных директориях!
 
-## Подготовка отчетов Interactive Brokers
+### Подготовка отчетов Interactive Brokers
 Для работы нужно выгрузить из [личного кабинета](https://www.interactivebrokers.co.uk/sso/Login) два типа отчетов: *Activity statement* (сделки, дивиденды, информация по инструментам и т.п.) и *Trade Confirmation* (settlement date, необходимая для правильной конвертации сумм по курсу ЦБ)
 
-### Activity statement
+#### Activity statement
 Для загрузки нужно перейти в **Reports / Tax Docs** > **Default Statements** > **Activity**
 
 Выбрать `Format: CSV` и скачать данные за все доступное время (`Perioid: Annual` для прошлых лет + `Period: Year to Date` для текущего года)
@@ -40,7 +41,7 @@ $ pip install investments --upgrade --user
 
 ![Activity Statement](./images/ib_report_activity.jpg)
 
-### Trade Confirmation
+#### Trade Confirmation
 
 Для загрузки нужно перейти в **Reports / Tax Docs** > **Flex Queries** > **Trade Confirmation Flex Query** и создать новый тип отчетов, выбрав в **Sections** > **Trade Confirmation** все пункты в группе **Executions**, остальные настройки - как на скриншоте:
 
