@@ -2,7 +2,7 @@ import datetime
 import os
 from typing import Optional
 
-import pandas
+import pandas  # type: ignore
 
 
 class DataFrameCache(object):

@@ -2,7 +2,7 @@ import argparse
 import os
 from typing import List, Optional
 
-import pandas
+import pandas  # type: ignore
 
 from investments.currency import Currency
 from investments.data_providers.cbr import ExchangeRatesRUB
