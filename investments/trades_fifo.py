@@ -133,7 +133,7 @@ def analyze_trades_fifo(trades: Iterable[Trade]) -> Tuple[List[Any], List[Finish
                 trade.ticker,
                 trade.datetime,
                 trade.settle_date,
-                trade.quantity,
+                trade.quantity - quantity,
                 trade.price,
                 abs(trade.quantity) * trade.price,
                 total_profit,

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "investments"
-version = "0.1.18"
+version = "0.1.19"
 description = "Analysis of Interactive Brokers reports for tax reporting in Russia"
 license = "MIT"
 authors = ["Maxim Andreev <andreevmaxim@gmail.com>"]
