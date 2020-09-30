@@ -60,6 +60,9 @@ def test_tradesfifo_ticker_different_kinds():
 def test_analyze_trades_fifo():
     dt = datetime.datetime.now()
 
+    # trades: [(Date, Symbol, Quantity, Price)]
+    # expect_portfolio: (Symbol, quantity)
+    # expect_trades: (N, Symbol, Quantity, Total, Profit)
     testcases = [
         {
             'trades': [
@@ -68,7 +71,7 @@ def test_analyze_trades_fifo():
                 ('2018-01-07', 'TEST', -100, 50.3),
             ],
             'expect_portfolio': [('TEST', 50)],
-            'expect_trades': [(1, 'TEST', 100, 0), (1, 'TEST', -100, 4610)],
+            'expect_trades': [(1, 'TEST', 100, 420, 0), (1, 'TEST', -100, 5030, 4610)],
         },
         {
             'trades': [
@@ -77,7 +80,7 @@ def test_analyze_trades_fifo():
                 ('2018-01-07', 'TEST', -130, 50.3),
             ],
             'expect_portfolio': [('TEST', 20)],
-            'expect_trades': [(1, 'TEST', 100, 0), (1, 'TEST', 30, 0), (1, 'TEST', -130, 5594)],
+            'expect_trades': [(1, 'TEST', 100, 420, 0), (1, 'TEST', 30, 525, 0), (1, 'TEST', -130, 6539, 5594)],
         },
         {
             'trades': [
@@ -85,7 +88,7 @@ def test_analyze_trades_fifo():
                 ('2018-01-04', 'TEST', 30, 17.5),
             ],
             'expect_portfolio': [('TEST', -70)],
-            'expect_trades': [(1, 'TEST', -30, 0), (1, 'TEST', 30, -399)],
+            'expect_trades': [(1, 'TEST', -30, 126, 0), (1, 'TEST', 30, 525, -399)],
         },
 
         # issue #8 - sell all & open short in one trade
@@ -96,7 +99,7 @@ def test_analyze_trades_fifo():
                 ('2018-01-05', 'TEST', -3, 17.5),
             ],
             'expect_portfolio': [('TEST', -3)],
-            'expect_trades': [(1, 'TEST', 10, 0), (1, 'TEST', -10, 133)],
+            'expect_trades': [(1, 'TEST', 10, 42, 0), (1, 'TEST', -10, 175, 133)],
         },
         {
             'trades': [
@@ -104,7 +107,7 @@ def test_analyze_trades_fifo():
                 ('2018-01-05', 'TEST', -13, 17.5),
             ],
             'expect_portfolio': [('TEST', -3)],
-            'expect_trades': [(1, 'TEST', 10, 0), (1, 'TEST', -10, 133)],
+            'expect_trades': [(1, 'TEST', 10, 42, 0), (1, 'TEST', -10, 175, 133)],
         },
     ]
 
@@ -129,7 +132,8 @@ def test_analyze_trades_fifo():
             assert expected[0] == trade.N, f'expect trade N={expected[0]} but got {trade.N}'
             assert expected[1] == trade.ticker.symbol, f'expect trade ticker={expected[1]} but got {trade.ticker.symbol}'
             assert expected[2] == trade.quantity, f'expect trade quantity={expected[2]} but got {trade.quantity}'
-            assert expected[3] == trade.profit.amount, f'expect trade profit={expected[3]} but got {trade.profit.amount}'
+            assert expected[3] == trade.total.amount, f'expect trade total={expected[3]} but got {trade.total.amount}'
+            assert expected[4] == trade.profit.amount, f'expect trade profit={expected[4]} but got {trade.profit.amount}'
 
         assert len(portfolio) == len(tc['expect_portfolio'])
         assert len(portfolio) == 1  # FIXME

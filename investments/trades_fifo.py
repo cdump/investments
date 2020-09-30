@@ -128,14 +128,15 @@ def analyze_trades_fifo(trades: Iterable[Trade]) -> Tuple[List[Any], List[Finish
             quantity -= -1 * q
 
         if total_profit is not None:
+            q = trade.quantity - quantity
             finished_trades.append(FinishedTrade(
                 finished_trade_id,
                 trade.ticker,
                 trade.datetime,
                 trade.settle_date,
-                trade.quantity - quantity,
+                q,
                 trade.price,
-                abs(trade.quantity) * trade.price,
+                abs(q) * trade.price,
                 total_profit,
             ))
             finished_trade_id += 1
