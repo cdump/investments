@@ -1,11 +1,10 @@
 import datetime
-from dataclasses import dataclass
+from typing import NamedTuple
 
 from investments.money import Money
 
 
-@dataclass
-class Fee:
+class Fee(NamedTuple):
     """
     Побочные комиссии
     По итогам года можно сальдировать сумму данных комиссий с доходами от сделок на фондовой секции
@@ -17,3 +16,6 @@ class Fee:
     date: datetime.date
     amount: Money
     description: str
+
+    def __str__(self):
+        return f'{self.date} ({self.amount} {self.description})'

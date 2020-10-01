@@ -62,7 +62,7 @@ Withholding Tax,Data,USD,2016-06-07,JNJ(US4781601046) Cash Dividend 0.80000000 U
         'Withholding Tax': p._parse_withholding_tax,
     })
 
-    d = p.dividends()
+    d = p.dividends
     assert d[0].ticker.symbol == 'INTC'
     assert d[0].amount == Money(6.5, Currency.USD)
     assert d[0].tax == Money(0.65, Currency.USD)

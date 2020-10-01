@@ -6,13 +6,14 @@ import pandas  # type: ignore
 
 from investments.currency import Currency
 from investments.data_providers.cbr import ExchangeRatesRUB
+from investments.dividend import Dividend
+from investments.fees import Fee
 from investments.money import Money
 from investments.report_parsers.ib import InteractiveBrokersReportParser
 from investments.trades_fifo import analyze_trades_fifo
 
 
-def prepare_trades_report(df: pandas.DataFrame, usdrub_rates_df: pandas.DataFrame):
-    # tax_date_column = 'date'
+def prepare_trades_report(df: pandas.DataFrame, usdrub_rates_df: pandas.DataFrame) -> pandas.DataFrame:
     tax_date_column = 'settle_date'
 
     df['date'] = df['datetime'].dt.normalize()
@@ -35,7 +36,7 @@ def prepare_trades_report(df: pandas.DataFrame, usdrub_rates_df: pandas.DataFram
     return df
 
 
-def prepare_dividends_report(dividends, usdrub_rates_df: pandas.DataFrame):
+def prepare_dividends_report(dividends: List[Dividend], usdrub_rates_df: pandas.DataFrame) -> pandas.DataFrame:
     df_data = [(i + 1, x.ticker, pandas.to_datetime(x.date), x.amount, x.tax) for i, x in enumerate(dividends)]
     df = pandas.DataFrame(df_data, columns=['N', 'ticker', 'date', 'amount', 'tax_paid'])
     df['tax_year'] = df['date'].map(lambda x: x.year)
@@ -48,23 +49,46 @@ def prepare_dividends_report(dividends, usdrub_rates_df: pandas.DataFrame):
     return df
 
 
-def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.DataFrame], portfolio,
-                filter_years: List[int]):
+def prepare_fees_report(fees: List[Fee], usdrub_rates_df: pandas.DataFrame) -> pandas.DataFrame:
+    df_data = [(i + 1, pandas.to_datetime(x.date), x.amount, x.description, x.date.year)
+               for i, x in enumerate(fees)]
+    df = pandas.DataFrame(df_data, columns=['N', 'date', 'amount', 'description', 'tax_year'])
+
+    df = df.join(usdrub_rates_df, how='left', on='date')
+
+    df['amount_rub'] = df.apply(lambda x: x['amount'].convert_to(x['rate']).round(digits=2), axis=1)
+    return df
+
+
+def _show_header(msg: str):
+    print(f'>>> {msg} <<<')
+
+
+def _show_fees_report(fees: Optional[pandas.DataFrame], year: int):
+    fees_year = fees[fees['tax_year'] == year].drop(columns=['tax_year'])
+    _show_header('OTHER FEES')
+    print(fees_year.set_index(['N', 'date']).to_string())
+    print('\nTOTAL:\t', fees_year['amount_rub'].sum())
+    print('\n\n')
+
+
+def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.DataFrame],
+                fees: Optional[pandas.DataFrame], portfolio, filter_years: List[int]):
     years = set()
-    for report in (trades, dividends):
+    for report in (trades, dividends, fees):
         if report is not None:
             years |= set(report['tax_year'].unique())
 
     for year in years:  # noqa: WPS426
         if filter_years and (year not in filter_years):
             continue
-        print('______' * 8, f'  {year}  ', '______' * 8, '\n')
+        print('\n', '______' * 8, f'  {year}  ', '______' * 8, '\n')
 
         if dividends is not None:
             dividends_year = dividends[dividends['tax_year'] == year].drop(columns=['tax_year'])
             dividends_year['N'] -= dividends_year['N'].iloc[0] - 1
 
-            print('>>> DIVIDENDS <<<')
+            _show_header('DIVIDENDS')
             print(dividends_year.set_index(['N', 'ticker', 'date']).to_string())
             # print('\n>>> DIVIDENDS PROFIT BEFORE TAXES:\n   ', dividends_year['amount_rub'].sum())
             print('\n\n')
@@ -73,11 +97,11 @@ def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.D
             trades_year = trades[trades['tax_year'] == year].drop(columns=['tax_year', 'datetime'])
             trades_year['N'] -= trades_year['N'].iloc[0] - 1
 
-            print('>>> TRADES <<<')
+            _show_header('TRADES')
             print(trades_year.set_index(['N', 'ticker', 'date']).to_string())
             print('\n\n')
 
-            print('>>> TRADES RESULTS BEFORE TAXES <<<')
+            _show_header('TRADES RESULTS BEFORE TAXES')
             tp = trades_year.groupby(lambda idx: (
                 trades_year.loc[idx, 'ticker'].kind,
                 'expenses' if trades_year.loc[idx, 'quantity'] > 0 else 'income',
@@ -87,6 +111,10 @@ def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.D
             tp.columns.name = ''
             tp['profit'] = tp['income'] - tp['expenses']
             print(tp.reset_index().to_string())
+            print('\n\n')
+
+        if fees is not None:
+            _show_fees_report(fees, year)
 
         print('______' * 8, f'EOF {year}', '______' * 8, '\n\n\n')
 
@@ -148,6 +176,7 @@ def main():
     cbrates_df = ExchangeRatesRUB(year_from=first_year, cache_dir=args.cache_dir).dataframe()
 
     dividends_report = prepare_dividends_report(dividends, cbrates_df) if dividends else None
+    fees_report = prepare_fees_report(fees, cbrates_df) if fees else None
 
     portfolio, finished_trades = analyze_trades_fifo(trades)
     if finished_trades:
@@ -156,7 +185,7 @@ def main():
     else:
         trades_report = None
 
-    show_report(trades_report, dividends_report, portfolio, args.years)
+    show_report(trades_report, dividends_report, fees_report, portfolio, args.years)
 
 
 if __name__ == '__main__':
