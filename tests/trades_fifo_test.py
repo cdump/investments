@@ -58,8 +58,6 @@ def test_tradesfifo_ticker_different_kinds():
 
 
 def test_analyze_trades_fifo():
-    dt = datetime.datetime.now()
-
     # trades: [(Date, Symbol, Quantity, Price)]
     # expect_portfolio: (Symbol, quantity)
     # expect_trades: (N, Symbol, Quantity, Total, Profit)

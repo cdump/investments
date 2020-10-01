@@ -48,7 +48,8 @@ def prepare_dividends_report(dividends, usdrub_rates_df: pandas.DataFrame):
     return df
 
 
-def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.DataFrame], portfolio, filter_years: List[int]):
+def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.DataFrame], portfolio,
+                filter_years: List[int]):
     years = set()
     for report in (trades, dividends):
         if report is not None:
@@ -117,7 +118,7 @@ def main():
         print('--activity-reports-dir and --confirmation-reports-dir MUST be different directories')
         return
 
-    p = InteractiveBrokersReportParser()
+    parser_object = InteractiveBrokersReportParser()
 
     activity_reports = csvs_in_dir(args.activity_reports_dir)
     confirmation_reports = csvs_in_dir(args.confirmation_reports_dir)
@@ -130,13 +131,14 @@ def main():
     print('========' * 8)
     print('')
 
-    p.parse_csv(
+    parser_object.parse_csv(
         activity_csvs=activity_reports,
         trade_confirmation_csvs=confirmation_reports,
     )
 
-    trades = p.trades()
-    dividends = p.dividends()
+    trades = parser_object.trades
+    dividends = parser_object.dividends
+    fees = parser_object.fees
 
     if not trades:
         print('no trades found')
