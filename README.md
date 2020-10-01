@@ -51,3 +51,24 @@ $ pip install investments --upgrade --user
 
 
 ![Trade Confirmation Statement](./images/ib_report_trade_confirmation.jpg)
+
+
+## Разворачивание проекта для внесения изменений
+
+- Install [poetry](https://python-poetry.org/docs/#installation)
+- Clone & modify & run
+
+```
+$ git clone https://github.com/cdump/investments
+
+$ cd investments
+
+$ poetry install
+$ poetry run ibtax
+usage: ibtax [-h] --activity-reports-dir ACTIVITY_REPORTS_DIR --confirmation-reports-dir CONFIRMATION_REPORTS_DIR [--cache-dir CACHE_DIR] [--years YEARS]
+ibtax: error: the following arguments are required: --activity-reports-dir, --confirmation-reports-dir
+
+$ vim investments/ibtax/ibtax.py # edit main file for example
+
+$ poetry run ibtax # run updated version
+```
