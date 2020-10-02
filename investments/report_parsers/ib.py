@@ -44,7 +44,7 @@ class NamedRowsParser:
         self._fields = fields
 
     def parse(self, row: List[str]) -> Dict[str, str]:
-        assert len(row) == len(self._fields)
+        assert len(row) == len(self._fields), f'expect {len(self._fields)} rows {self._fields}, but got {len(row)} rows ({row})'
         return {k: v for k, v in zip(self._fields, row)}
 
 
@@ -223,7 +223,11 @@ class InteractiveBrokersReportParser:
         tax_amount *= -1
         found = False
         for i, v in enumerate(self._dividends):
-            if v.ticker == ticker and v.date == date and v.dtype == div_type:
+            # difference in reports for the same past year, but generated in different time
+            # read more at https://github.com/cdump/investments/issues/17
+            cash_choice_hack = (v.dtype == 'Cash Dividend' and div_type == 'Choice Dividend')
+
+            if v.ticker == ticker and v.date == date and (v.dtype == div_type or cash_choice_hack):
                 assert v.amount.currency == tax_amount.currency
                 self._dividends[i] = Dividend(
                     dtype=v.dtype,

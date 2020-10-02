@@ -38,6 +38,38 @@ Dividends,Data,Total,,,777.11"""
     assert d[3].amount == Money(2.42, Currency.USD)
 
 
+def test_parse_dividends_with_tax():
+    p = InteractiveBrokersReportParser()
+
+    # both cases described in https://github.com/cdump/investments/issues/17
+
+    lines = """Financial Instrument Information,Header,Asset Category,Symbol,Description,Conid,Security ID,Multiplier,Type,Code
+Financial Instrument Information,Data,Stocks,INTC,INTEL CORP,270639,,1,,
+Financial Instrument Information,Data,Stocks,JNJ,JOHNSON & JOHNSON,8719,,1,,
+Dividends,Header,Currency,Date,Description,Amount
+Dividends,Data,USD,2016-06-01,INTC (US4581401001) Cash Dividend USD 0.26000000 (Ordinary Dividend),6.5
+Dividends,Data,USD,2016-06-07,JNJ(US4781601046) Cash Dividend 0.80000000 USD per Share (Ordinary Dividend),8
+Withholding Tax,Header,Currency,Date,Description,Amount,Code
+Withholding Tax,Data,USD,2016-06-01,INTC(US4581401001) Choice Dividend  0.26000000 USD Distribution Value - US Tax,-0.65,
+Withholding Tax,Data,USD,2016-06-07,JNJ(US4781601046) Cash Dividend 0.80000000 USD per Share - US Tax,-0.8,"""
+
+    lines = lines.split('\n')
+    p._real_parse_activity_csv(csv.reader(lines, delimiter=','), {
+        'Financial Instrument Information': p._parse_instrument_information,
+        'Dividends': p._parse_dividends,
+        'Withholding Tax': p._parse_withholding_tax,
+    })
+
+    d = p.dividends()
+    assert d[0].ticker.symbol == 'INTC'
+    assert d[0].amount == Money(6.5, Currency.USD)
+    assert d[0].tax == Money(0.65, Currency.USD)
+
+    assert d[1].ticker.symbol == 'JNJ'
+    assert d[1].amount == Money(8, Currency.USD)
+    assert d[1].tax == Money(0.8, Currency.USD)
+
+
 def test_parse_ticker_description_changed():
     p = InteractiveBrokersReportParser()
 
