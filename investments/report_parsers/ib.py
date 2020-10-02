@@ -9,6 +9,7 @@ from investments.dividend import Dividend
 from investments.money import Money
 from investments.ticker import Ticker, TickerKind
 from investments.trade import Trade
+from investments.fees import Fee
 
 
 def _parse_datetime(strval: str):
@@ -97,18 +98,26 @@ class InteractiveBrokersReportParser:
     def __init__(self):
         self._trades = []
         self._dividends = []
+        self._fees: List[Fee] = []
         self._deposits_and_withdrawals = []
         self._tickers = TickersStorage()
         self._settle_dates = {}
 
-    def trades(self):
+    @property
+    def trades(self) -> List:
         return self._trades
 
-    def dividends(self):
+    @property
+    def dividends(self) -> List:
         return self._dividends
 
-    def deposits_and_withdrawals(self):
+    @property
+    def deposits_and_withdrawals(self) -> List:
         return self._deposits_and_withdrawals
+
+    @property
+    def fees(self) -> List:
+        return self._fees
 
     def parse_csv(self, *, activity_csvs: List[str], trade_confirmation_csvs: List[str]):
         # 1. parse tickers info
@@ -132,7 +141,9 @@ class InteractiveBrokersReportParser:
                     'Withholding Tax': self._parse_withholding_tax,
                     'Deposits & Withdrawals': self._parse_deposits,
                     # 'Account Information', 'Cash Report', 'Change in Dividend Accruals', 'Change in NAV',
-                    # 'Codes', 'Fees', 'Interest Accruals', 'Interest', 'Mark-to-Market Performance Summary',
+                    # 'Codes',
+                    'Fees': self._parse_fees,
+                    # 'Interest Accruals', 'Interest', 'Mark-to-Market Performance Summary',
                     # 'Net Asset Value', 'Notes/Legal Notes', 'Open Positions', 'Realized & Unrealized Performance Summary',
                     # 'Statement', '\ufeffStatement', 'Total P/L for Statement Period', 'Transaction Fees',
                 })
@@ -172,7 +183,7 @@ class InteractiveBrokersReportParser:
                 nrparser.parse_header(row[2:])
                 continue
 
-            if row[1] in {'Total', 'SubTotal'} or row[2].startswith('Total'):
+            if row[1] in {'Total', 'SubTotal', 'Notes'} or row[2].startswith('Total'):
                 continue
 
             if row[1] == 'Data':
@@ -275,3 +286,10 @@ class InteractiveBrokersReportParser:
         date = _parse_date(f['Settle Date'])
         amount = Money(f['Amount'], currency)
         self._deposits_and_withdrawals.append((date, amount))
+
+    def _parse_fees(self, f: Dict[str, str]):
+        currency = Currency.parse(f['Currency'])
+        date = _parse_date(f['Date'])
+        amount = Money(f['Amount'], currency)
+        description = f"{f['Subtitle']} - {f['Description']}"
+        self._fees.append(Fee(date, amount, description))

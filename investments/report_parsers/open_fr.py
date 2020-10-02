@@ -1,7 +1,7 @@
 import datetime
 import re
 import xml.etree.ElementTree as ET
-from typing import Optional
+from typing import Optional, List
 
 from investments.currency import Currency
 from investments.dividend import Dividend
@@ -80,13 +80,16 @@ class OpenBrokerFRParser:
         self._deposits_and_withdrawals = []
         self._tickers = TickersStorageFR(dividends_name_to_ticker)
 
-    def trades(self):
+    @property
+    def trades(self) -> List:
         return self._trades
 
-    def dividends(self):
+    @property
+    def dividends(self) -> List:
         return self._dividends
 
-    def deposits_and_withdrawals(self):
+    @property
+    def deposits_and_withdrawals(self) -> List:
         return self._deposits_and_withdrawals
 
     def parse_xml(self, xml_file_name: str):

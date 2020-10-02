@@ -1,6 +1,8 @@
 import csv
+import datetime
 
 from investments.currency import Currency
+from investments.fees import Fee
 from investments.money import Money
 from investments.report_parsers.ib import InteractiveBrokersReportParser
 from investments.ticker import TickerKind
@@ -31,7 +33,7 @@ Dividends,Data,Total,,,777.11"""
         'Withholding Tax': p._parse_withholding_tax,
     })
 
-    d = p.dividends()
+    d = p.dividends
     assert d[0].amount == Money(6.5, Currency.USD)
     assert d[1].amount == Money(8, Currency.USD)
     assert d[2].amount == Money(1.61, Currency.USD)
@@ -60,7 +62,7 @@ Withholding Tax,Data,USD,2016-06-07,JNJ(US4781601046) Cash Dividend 0.80000000 U
         'Withholding Tax': p._parse_withholding_tax,
     })
 
-    d = p.dividends()
+    d = p.dividends
     assert d[0].ticker.symbol == 'INTC'
     assert d[0].amount == Money(6.5, Currency.USD)
     assert d[0].tax == Money(0.65, Currency.USD)
@@ -87,3 +89,28 @@ Financial Instrument Information,Data,Stocks,VNQ,VANGUARD REAL ESTATE ETF,312303
 
     b = p._tickers.get_ticker('VANGUARD REAL ESTATE ETF', TickerKind.Stock)
     assert b.symbol == 'VNQ'
+
+
+def test_parse_fees():
+    p = InteractiveBrokersReportParser()
+
+    lines = """Fees,Header,Subtitle,Currency,Date,Description,Amount
+Fees,Data,Other Fees,USD,2020-02-05,E*****42:GLOBAL SNAPSHOT FOR JAN 2020,-0.03
+Fees,Data,Other Fees,USD,2020-02-05,E*****42:GLOBAL SNAPSHOT FOR JAN 2020,0.03
+Fees,Data,Other Fees,USD,2020-06-03,E*****42:US CONSOLIDATED SNAPSHOT FOR MAY 2020,-0.01
+Fees,Data,Other Fees,USD,2020-06-03,E*****42:US CONSOLIDATED SNAPSHOT FOR MAY 2020,0.01
+Fees,Data,Other Fees,USD,2020-07-02,Balance of Monthly Minimum Fee for Jun 2020,-7.64
+Fees,Data,Other Fees,USD,2020-09-03,Balance of Monthly Minimum Fee for Aug 2020,-10
+Fees,Data,Total,,,,-17.64
+Fees,Notes,"Market data is provided by Global Financial Information Services (GmbH)"""
+
+    lines = lines.split('\n')
+    p._real_parse_activity_csv(csv.reader(lines, delimiter=','), {
+        'Fees': p._parse_fees,
+    })
+
+    assert len(p.fees) == 6
+    assert p.fees[1] == Fee(date=datetime.date(2020, 2, 5), amount=Money(0.03, Currency.USD),
+                            description='Other Fees - E*****42:GLOBAL SNAPSHOT FOR JAN 2020')
+    assert p.fees[5] == Fee(date=datetime.date(2020, 9, 3), amount=Money(-10., Currency.USD),
+                            description='Other Fees - Balance of Monthly Minimum Fee for Aug 2020')
