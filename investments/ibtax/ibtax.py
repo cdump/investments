@@ -36,22 +36,29 @@ def prepare_trades_report(df: pandas.DataFrame, usdrub_rates_df: pandas.DataFram
     return df
 
 
-def prepare_dividends_report(dividends: List[Dividend], usdrub_rates_df: pandas.DataFrame) -> pandas.DataFrame:
+def prepare_dividends_report(dividends: List[Dividend], usdrub_rates_df: pandas.DataFrame, verbose: bool) -> pandas.DataFrame:
+    if not verbose:
+        dividends = [x for x in dividends if x.amount.amount != 0 or x.tax.amount != 0]  # remove reversed dividends
+
     df_data = [(i + 1, x.ticker, pandas.to_datetime(x.date), x.amount, x.tax) for i, x in enumerate(dividends)]
     df = pandas.DataFrame(df_data, columns=['N', 'ticker', 'date', 'amount', 'tax_paid'])
     df['tax_year'] = df['date'].map(lambda x: x.year)
 
     df = df.join(usdrub_rates_df, how='left', on='date')
 
-    # df['tax_rate'] = df.apply(lambda x: round(x['tax_paid'].amount * 100 / x['amount'].amount, 2), axis=1)
     df['amount_rub'] = df.apply(lambda x: x['amount'].convert_to(x['rate']).round(digits=2), axis=1)
     df['tax_paid_rub'] = df.apply(lambda x: x['tax_paid'].convert_to(x['rate']).round(digits=2), axis=1)
+    if verbose:
+        df['tax_rate'] = df.apply(lambda x: round(x['tax_paid'].amount * 100 / x['amount'].amount, 2), axis=1)
+
     return df
 
 
 def prepare_fees_report(fees: List[Fee], usdrub_rates_df: pandas.DataFrame) -> pandas.DataFrame:
-    df_data = [(i + 1, pandas.to_datetime(x.date), x.amount, x.description, x.date.year)
-               for i, x in enumerate(fees)]
+    df_data = [
+        (i + 1, pandas.to_datetime(x.date), x.amount, x.description, x.date.year)
+        for i, x in enumerate(fees)
+    ]
     df = pandas.DataFrame(df_data, columns=['N', 'date', 'amount', 'description', 'tax_year'])
 
     df = df.join(usdrub_rates_df, how='left', on='date')
@@ -64,7 +71,7 @@ def _show_header(msg: str):
     print(f'>>> {msg} <<<')
 
 
-def _show_fees_report(fees: Optional[pandas.DataFrame], year: int):
+def _show_fees_report(fees: pandas.DataFrame, year: int):
     fees_year = fees[fees['tax_year'] == year].drop(columns=['tax_year'])
     _show_header('OTHER FEES')
     print(fees_year.set_index(['N', 'date']).to_string())
@@ -72,8 +79,7 @@ def _show_fees_report(fees: Optional[pandas.DataFrame], year: int):
     print('\n\n')
 
 
-def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.DataFrame],
-                fees: Optional[pandas.DataFrame], portfolio, filter_years: List[int]):
+def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.DataFrame], fees: Optional[pandas.DataFrame], portfolio, filter_years: List[int]):
     years = set()
     for report in (trades, dividends, fees):
         if report is not None:
@@ -140,6 +146,7 @@ def main():
     parser.add_argument('--confirmation-reports-dir', type=str, required=True, help='directory with InteractiveBrokers .csv confirmation reports')
     parser.add_argument('--cache-dir', type=str, default='.', help='directory for caching (CBR RUB exchange rates)')
     parser.add_argument('--years', type=lambda x: [int(v.strip()) for v in x.split(',')], default=[], help='comma separated years for final report, omit for all')
+    parser.add_argument('--verbose', nargs='?', default=False, const=True, help='do not "prune" reversed dividends, show dividens tax percent, etc.')
     args = parser.parse_args()
 
     if os.path.abspath(args.activity_reports_dir) == os.path.abspath(args.confirmation_reports_dir):
@@ -175,7 +182,7 @@ def main():
     first_year = min(trades[0].datetime.year, dividends[0].date.year) if dividends else trades[0].datetime.year
     cbrates_df = ExchangeRatesRUB(year_from=first_year, cache_dir=args.cache_dir).dataframe()
 
-    dividends_report = prepare_dividends_report(dividends, cbrates_df) if dividends else None
+    dividends_report = prepare_dividends_report(dividends, cbrates_df, args.verbose) if dividends else None
     fees_report = prepare_fees_report(fees, cbrates_df) if fees else None
 
     portfolio, finished_trades = analyze_trades_fifo(trades)

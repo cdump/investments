@@ -150,7 +150,6 @@ class InteractiveBrokersReportParser:
 
         # 4. sort
         self._trades.sort(key=lambda x: x.datetime)
-        self._dividends = [x for x in self._dividends if x.amount.amount != 0 or x.tax.amount != 0]  # remove reversed dividends
         self._dividends.sort(key=lambda x: x.date)
         self._deposits_and_withdrawals.sort(key=lambda x: x[0])
 
