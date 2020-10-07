@@ -6,10 +6,10 @@ from typing import Dict, Iterator, List, Tuple
 
 from investments.currency import Currency
 from investments.dividend import Dividend
+from investments.fees import Fee
 from investments.money import Money
 from investments.ticker import Ticker, TickerKind
 from investments.trade import Trade
-from investments.fees import Fee
 
 
 def _parse_datetime(strval: str):

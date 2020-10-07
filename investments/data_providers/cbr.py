@@ -1,7 +1,7 @@
 import datetime
-import xml.etree.ElementTree as ET
 from typing import List, Tuple
 
+import defusedxml.ElementTree as ET  # type: ignore
 import pandas  # type: ignore
 import requests
 
