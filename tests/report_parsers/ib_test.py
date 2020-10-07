@@ -1,11 +1,12 @@
 import csv
 import datetime
+from decimal import Decimal
 
 from investments.currency import Currency
 from investments.fees import Fee
 from investments.interests import Interest
 from investments.money import Money
-from investments.report_parsers.ib import InteractiveBrokersReportParser
+from investments.report_parsers.ib import InteractiveBrokersReportParser, _parse_date, _parse_datetime
 from investments.ticker import TickerKind
 
 
@@ -138,3 +139,48 @@ Interest,Data,Total Interest in USD,,,0.13844211"""
                                       description='RUB Credit Interest for Feb-2020')
     assert p.interests[1] == Interest(date=datetime.date(2020, 3, 4), amount=Money(0.09, Currency.USD),
                                       description='USD Credit Interest for Feb-2020')
+
+
+def test_parse_trades_with_fees():
+    p = InteractiveBrokersReportParser()
+
+    lines = """Financial Instrument Information,Header,Asset Category,Symbol,Description,Conid,Security ID,Listing Exch,Multiplier,Type,Code
+Financial Instrument Information,Data,Stocks,VT,VANGUARD TOT WORLD STK ETF,52197301,US9220427424,ARCA,1,ETF,
+Trades,Header,DataDiscriminator,Asset Category,Currency,Symbol,Date/Time,Quantity,T. Price,C. Price,Proceeds,Comm/Fee,Basis,Realized P/L,MTM P/L,Code
+Trades,Data,Order,Stocks,USD,VT,"2020-01-31, 09:30:00",10,80.62,79.73,-806.2,-1,807.2,0,-8.9,O
+Trades,Data,Order,Stocks,USD,VT,"2020-02-10, 09:38:00",-10,81.82,82.25,818.2,-1.01812674,-807.2,9.981873,-4.3,C
+Trades,SubTotal,,Stocks,USD,VT,,0,,,12,-2.01812674,0,9.981873,-13.2,
+Trades,Total,,Stocks,USD,,,,,,-57144.745,-25.563491343,57180.290364603,9.981873,-16.654,"""
+
+    lines = lines.split('\n')
+    p._settle_dates = {
+        ('VT', _parse_datetime('2020-01-31, 09:30:00')): _parse_date('2020-02-04'),
+        ('VT', _parse_datetime('2020-02-10, 09:38:00')): _parse_date('2020-02-12'),
+    }
+
+    p._real_parse_activity_csv(csv.reader(lines, delimiter=','), {
+        'Financial Instrument Information': p._parse_instrument_information,
+        'Trades': p._parse_trades,
+    })
+
+    assert len(p.trades) == 2
+
+    # buy trade
+    assert p.trades[0].ticker.symbol == 'VT'
+    assert p.trades[0].datetime == _parse_datetime('2020-01-31, 09:30:00')
+    assert p.trades[0].settle_date == _parse_date('2020-02-04')
+    assert p.trades[0].quantity == 10
+    assert p.trades[0].price.amount == Decimal('80.62')
+    assert p.trades[0].price.currency == Currency.USD
+    assert p.trades[0].fee.amount == Decimal('-1')
+    assert p.trades[0].fee.currency == Currency.USD
+
+    # sell trade
+    assert p.trades[1].ticker.symbol == 'VT'
+    assert p.trades[1].datetime == _parse_datetime('2020-02-10, 09:38:00')
+    assert p.trades[1].settle_date == _parse_date('2020-02-12')
+    assert p.trades[1].quantity == -10
+    assert p.trades[1].price.amount == Decimal('81.82')
+    assert p.trades[1].price.currency == Currency.USD
+    assert p.trades[1].fee.amount == Decimal('-1.01812674')
+    assert p.trades[1].fee.currency == Currency.USD

@@ -1,6 +1,6 @@
 import datetime
-from collections import defaultdict
-from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Tuple
+from collections import Counter, defaultdict
+from typing import Iterable, List, NamedTuple, Optional, Tuple
 
 from investments.money import Money
 from investments.ticker import Ticker
@@ -75,22 +75,15 @@ class _TradesFIFO:
 
         return front['trade'], q
 
-    def unmatched(self) -> List[Dict[str, Any]]:
-        """
-        Return basic information about unmatched trades (final portfolio).
 
-        Returns:
-            portfolio: Portfolio
-        """
-        ret = []
-        for ticker, trades in self._portfolio.items():
-            quantity = sum(v['quantity'] for v in trades)
-            if quantity != 0:
-                ret.append({'quantity': quantity, 'ticker': ticker})
-        return ret
+def analyze_portfolio(trades: Iterable[Trade]) -> List[Tuple[str, int]]:
+    out: Counter = Counter()
+    for t in trades:
+        out.update(**{str(t.ticker): t.quantity})
+    return list(filter(lambda x: x[1], sorted(out.items())))
 
 
-def analyze_trades_fifo(trades: Iterable[Trade]) -> Tuple[List[Any], List[FinishedTrade]]:
+def analyze_trades_fifo(trades: Iterable[Trade]) -> List[FinishedTrade]:
     finished_trades = []
     finished_trade_id = 1
 
@@ -144,5 +137,4 @@ def analyze_trades_fifo(trades: Iterable[Trade]) -> Tuple[List[Any], List[Finish
         if quantity != 0:
             active_trades.put(quantity, trade)
 
-    portfolio = active_trades.unmatched()
-    return portfolio, finished_trades
+    return finished_trades
