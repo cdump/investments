@@ -17,12 +17,11 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Install poetry
-      run: |
-        curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
-        echo "::set-env name=PATH::$HOME/.poetry/bin:$PATH"
+      uses: Gr1N/setup-poetry@v4
 
     - name: Install package
       run: |
+        poetry --version
         poetry install
 
     - name: Run tests
