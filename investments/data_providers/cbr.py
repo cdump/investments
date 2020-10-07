@@ -1,4 +1,5 @@
 import datetime
+import logging
 import xml.etree.ElementTree as ET  # type: ignore
 from typing import List, Tuple
 
@@ -15,6 +16,7 @@ class ExchangeRatesRUB:
         cache = DataFrameCache(cache_dir, f'cbrates_since{year_from}.cache', datetime.timedelta(days=1))
         df = cache.get()
         if df is not None:
+            logging.info('CBR cache hit')
             self._df = df
             return
 
@@ -39,6 +41,7 @@ class ExchangeRatesRUB:
         cache.put(df)
         self._df = df
 
+    @property
     def dataframe(self) -> pandas.DataFrame:
         return self._df
 

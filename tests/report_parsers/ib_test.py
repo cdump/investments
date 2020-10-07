@@ -3,6 +3,7 @@ import datetime
 
 from investments.currency import Currency
 from investments.fees import Fee
+from investments.interests import Interest
 from investments.money import Money
 from investments.report_parsers.ib import InteractiveBrokersReportParser
 from investments.ticker import TickerKind
@@ -114,3 +115,26 @@ Fees,Notes,"Market data is provided by Global Financial Information Services (Gm
                             description='Other Fees - E*****42:GLOBAL SNAPSHOT FOR JAN 2020')
     assert p.fees[5] == Fee(date=datetime.date(2020, 9, 3), amount=Money(-10., Currency.USD),
                             description='Other Fees - Balance of Monthly Minimum Fee for Aug 2020')
+
+
+def test_parse_interests():
+    p = InteractiveBrokersReportParser()
+
+    lines = """Interest,Header,Currency,Date,Description,Amount
+Interest,Data,RUB,2020-03-04,RUB Credit Interest for Feb-2020,3.21
+Interest,Data,Total,,,3.21
+Interest,Data,Total in USD,,,0.04844211
+Interest,Data,USD,2020-03-04,USD Credit Interest for Feb-2020,0.09
+Interest,Data,Total,,,0.09
+Interest,Data,Total Interest in USD,,,0.13844211"""
+
+    lines = lines.split('\n')
+    p._real_parse_activity_csv(csv.reader(lines, delimiter=','), {
+        'Interest': p._parse_interests,
+    })
+
+    assert len(p.interests) == 2
+    assert p.interests[0] == Interest(date=datetime.date(2020, 3, 4), amount=Money(3.21, Currency.RUB),
+                                      description='RUB Credit Interest for Feb-2020')
+    assert p.interests[1] == Interest(date=datetime.date(2020, 3, 4), amount=Money(0.09, Currency.USD),
+                                      description='USD Credit Interest for Feb-2020')

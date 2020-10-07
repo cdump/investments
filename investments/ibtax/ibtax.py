@@ -1,4 +1,5 @@
 import argparse
+import logging
 import os
 from typing import List, Optional
 
@@ -8,6 +9,7 @@ from investments.currency import Currency
 from investments.data_providers.cbr import ExchangeRatesRUB
 from investments.dividend import Dividend
 from investments.fees import Fee
+from investments.interests import Interest
 from investments.money import Money
 from investments.report_parsers.ib import InteractiveBrokersReportParser
 from investments.trades_fifo import analyze_trades_fifo
@@ -67,6 +69,19 @@ def prepare_fees_report(fees: List[Fee], usdrub_rates_df: pandas.DataFrame) -> p
     return df
 
 
+def prepare_interests_report(interests: List[Interest], usdrub_rates_df: pandas.DataFrame) -> pandas.DataFrame:
+    df_data = [
+        (i + 1, pandas.to_datetime(x.date), x.amount, x.description, x.date.year)
+        for i, x in enumerate(interests)
+    ]
+    df = pandas.DataFrame(df_data, columns=['N', 'date', 'amount', 'description', 'tax_year'])
+
+    df = df.join(usdrub_rates_df, how='left', on='date')
+
+    df['amount_rub'] = df.apply(lambda x: x['amount'].convert_to(x['rate']).round(digits=2), axis=1)
+    return df
+
+
 def _show_header(msg: str):
     print(f'>>> {msg} <<<')
 
@@ -79,9 +94,18 @@ def _show_fees_report(fees: pandas.DataFrame, year: int):
     print('\n\n')
 
 
-def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.DataFrame], fees: Optional[pandas.DataFrame], portfolio, filter_years: List[int]):
+def _show_interests_report(interests: pandas.DataFrame, year: int):
+    interests_year = interests[interests['tax_year'] == year].drop(columns=['tax_year'])
+    _show_header('INTERESTS')
+    print(interests_year.set_index(['N', 'date']).to_string())
+    print('\n\n')
+
+
+def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.DataFrame],
+                fees: Optional[pandas.DataFrame], interests: Optional[pandas.DataFrame], portfolio,
+                filter_years: List[int]):  # noqa: WPS318,WPS319
     years = set()
-    for report in (trades, dividends, fees):
+    for report in (trades, dividends, fees, interests):
         if report is not None:
             years |= set(report['tax_year'].unique())
 
@@ -122,6 +146,9 @@ def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.D
         if fees is not None:
             _show_fees_report(fees, year)
 
+        if interests is not None:
+            _show_interests_report(interests, year)
+
         print('______' * 8, f'EOF {year}', '______' * 8, '\n\n\n')
 
     print('>>> PORTFOLIO <<<')
@@ -153,37 +180,44 @@ def main():
         print('--activity-reports-dir and --confirmation-reports-dir MUST be different directories')
         return
 
+    if args.verbose:
+        logging.basicConfig(level=logging.INFO)
+
     parser_object = InteractiveBrokersReportParser()
 
     activity_reports = csvs_in_dir(args.activity_reports_dir)
     confirmation_reports = csvs_in_dir(args.confirmation_reports_dir)
 
     for apath in activity_reports:
-        print(f'[*] Activity report {apath}')
+        logging.info('Activity report %s', apath)
     for cpath in confirmation_reports:
-        print(f'[*] Confirmation report {cpath}')
+        logging.info('Confirmation report %s', cpath)
 
-    print('========' * 8)
-    print('')
+    logging.info('========' * 8)
 
+    logging.info('start reports parse')
     parser_object.parse_csv(
         activity_csvs=activity_reports,
         trade_confirmation_csvs=confirmation_reports,
     )
+    logging.info(f'end reports parse {parser_object}')
 
     trades = parser_object.trades
     dividends = parser_object.dividends
     fees = parser_object.fees
+    interests = parser_object.interests
 
     if not trades:
-        print('no trades found')
+        logging.warning('no trades found')
         return
 
+    # fixme first_year without dividends
     first_year = min(trades[0].datetime.year, dividends[0].date.year) if dividends else trades[0].datetime.year
-    cbrates_df = ExchangeRatesRUB(year_from=first_year, cache_dir=args.cache_dir).dataframe()
+    cbrates_df = ExchangeRatesRUB(year_from=first_year, cache_dir=args.cache_dir).dataframe
 
     dividends_report = prepare_dividends_report(dividends, cbrates_df, args.verbose) if dividends else None
     fees_report = prepare_fees_report(fees, cbrates_df) if fees else None
+    interests_report = prepare_interests_report(interests, cbrates_df) if interests else None
 
     portfolio, finished_trades = analyze_trades_fifo(trades)
     if finished_trades:
@@ -192,7 +226,7 @@ def main():
     else:
         trades_report = None
 
-    show_report(trades_report, dividends_report, fees_report, portfolio, args.years)
+    show_report(trades_report, dividends_report, fees_report, interests_report, portfolio, args.years)
 
 
 if __name__ == '__main__':
