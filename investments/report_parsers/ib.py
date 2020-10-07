@@ -13,11 +13,11 @@ from investments.ticker import Ticker, TickerKind
 from investments.trade import Trade
 
 
-def _parse_datetime(strval: str):
+def _parse_datetime(strval: str) -> datetime.datetime:
     return datetime.datetime.strptime(strval.replace(' ', ''), '%Y-%m-%d,%H:%M:%S')
 
 
-def _parse_date(strval: str):
+def _parse_date(strval: str) -> datetime.date:
     return datetime.datetime.strptime(strval, '%Y-%m-%d').date()
 
 
@@ -165,6 +165,7 @@ class InteractiveBrokersReportParser:
         self._dividends.sort(key=lambda x: x.date)
         self._interests.sort(key=lambda x: x.date)
         self._deposits_and_withdrawals.sort(key=lambda x: x[0])
+        self._fees.sort(key=lambda x: x.date)
 
     def _parse_trade_confirmation_csv(self, csv_reader: Iterator[List[str]]):
         parser = NamedRowsParser()

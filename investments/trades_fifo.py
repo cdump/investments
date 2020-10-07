@@ -18,6 +18,84 @@ class FinishedTrade(NamedTuple):
     profit: Money
 
 
+class PortfolioElement(NamedTuple):
+    ticker: Ticker
+    quantity: int
+
+
+class TradesAnalyzer:
+    _finished_trades: List[FinishedTrade]
+    _portfolio: List[PortfolioElement]
+
+    def __init__(self, trades: Iterable[Trade]):
+        self._finished_trades = []
+        self._portfolio = []
+        self.analyze_trades(trades)
+
+    def analyze_trades(self, trades: Iterable[Trade]):
+        finished_trade_id = 1
+
+        active_trades = _TradesFIFO()
+
+        for trade in trades:
+            total_profit = None
+
+            quantity = trade.quantity
+            while quantity != 0:
+
+                matched_trade, q = active_trades.match(quantity, trade.ticker)
+                if matched_trade is None:
+                    assert q == 0
+                    break
+                assert q != 0
+
+                self._finished_trades.append(FinishedTrade(
+                    finished_trade_id,
+                    trade.ticker,
+                    matched_trade.datetime,
+                    matched_trade.settle_date,
+                    q,
+                    matched_trade.price,
+                    abs(q) * matched_trade.price,
+                    Money(0, trade.price.currency),
+                ))
+
+                profit = q * (trade.price - matched_trade.price)
+                if total_profit is None:
+                    total_profit = profit
+                else:
+                    total_profit += profit
+
+                quantity -= -1 * q
+
+            if total_profit is not None:
+                q = trade.quantity - quantity
+                self._finished_trades.append(FinishedTrade(
+                    finished_trade_id,
+                    trade.ticker,
+                    trade.datetime,
+                    trade.settle_date,
+                    q,
+                    trade.price,
+                    abs(q) * trade.price,
+                    total_profit,
+                ))
+                finished_trade_id += 1
+
+            if quantity != 0:
+                active_trades.put(quantity, trade)
+
+        self._portfolio = [PortfolioElement(quantity=element['quantity'], ticker=element['ticker']) for element in active_trades.unmatched()]
+
+    @property
+    def finished_trades(self) -> List[FinishedTrade]:
+        return self._finished_trades
+
+    @property
+    def final_portfolio(self) -> List[PortfolioElement]:
+        return self._portfolio
+
+
 def sign(v: int) -> int:
     assert v != 0
     return -1 if v < 0 else 1
@@ -88,61 +166,3 @@ class _TradesFIFO:
             if quantity != 0:
                 ret.append({'quantity': quantity, 'ticker': ticker})
         return ret
-
-
-def analyze_trades_fifo(trades: Iterable[Trade]) -> Tuple[List[Any], List[FinishedTrade]]:
-    finished_trades = []
-    finished_trade_id = 1
-
-    active_trades = _TradesFIFO()
-
-    for trade in trades:
-        total_profit = None
-
-        quantity = trade.quantity
-        while quantity != 0:
-
-            matched_trade, q = active_trades.match(quantity, trade.ticker)
-            if matched_trade is None:
-                assert q == 0
-                break
-            assert q != 0
-
-            finished_trades.append(FinishedTrade(
-                finished_trade_id,
-                trade.ticker,
-                matched_trade.datetime,
-                matched_trade.settle_date,
-                q,
-                matched_trade.price,
-                abs(q) * matched_trade.price,
-                Money(0, trade.price.currency),
-            ))
-
-            profit = q * (trade.price - matched_trade.price)
-            if total_profit is None:
-                total_profit = profit
-            else:
-                total_profit += profit
-
-            quantity -= -1 * q
-
-        if total_profit is not None:
-            q = trade.quantity - quantity
-            finished_trades.append(FinishedTrade(
-                finished_trade_id,
-                trade.ticker,
-                trade.datetime,
-                trade.settle_date,
-                q,
-                trade.price,
-                abs(q) * trade.price,
-                total_profit,
-            ))
-            finished_trade_id += 1
-
-        if quantity != 0:
-            active_trades.put(quantity, trade)
-
-    portfolio = active_trades.unmatched()
-    return portfolio, finished_trades
