@@ -10,7 +10,7 @@ max-line-complexity = 24
 
 max-string-usages = 16
 
-max-local-variables = 16
+max-local-variables = 18
 
 max-cognitive-score = 24
 
