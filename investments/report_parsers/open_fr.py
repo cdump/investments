@@ -1,7 +1,7 @@
 import datetime
 import re
 import xml.etree.ElementTree as ET  # type: ignore
-from typing import Optional, List
+from typing import List, Optional
 
 from investments.currency import Currency
 from investments.dividend import Dividend
@@ -115,15 +115,15 @@ class OpenBrokerFRParser:
 
     def _parse_cb_convertation(self, f):
         # WARNING: lost price information, do not use for tax calculation!
-        qnty = float(f['quantity'])
-        assert float(int(qnty)) == qnty
+        qnty = int(f['quantity'])
+        assert float(f['quantity']) == qnty
         ticker = self._tickers.get(name=f['security_name'])
         dt = _parse_datetime(f['operation_date'])
         self._trades.append(Trade(
             ticker=ticker,
             datetime=dt,
             settle_date=dt,
-            quantity=int(qnty),
+            quantity=qnty,
             price=Money(0, Currency.RUB),  # TODO: other currencies
             fee=Money(0, Currency.RUB),
         ))
@@ -152,13 +152,13 @@ class OpenBrokerFRParser:
 
         m = re.match(r'^Выплата дохода клиент (\w+) \(Выкуп (?P<name>[^,]+), (?P<isin>\w+), количество (?P<quantity>\d+)\) налог не удерживается$', comment)
         if m is not None:
-            isin, quantity = m.group('isin'), int(m.group('quantity'))
+            isin, quantity_buyout = m.group('isin'), int(m.group('quantity'))
             self._trades.append(Trade(
                 ticker=self._tickers.get(isin=isin),
                 datetime=dt,
                 settle_date=dt,
-                quantity=-1 * quantity,
-                price=money_total / quantity,
+                quantity=-1 * quantity_buyout,
+                price=money_total / quantity_buyout,
                 fee=Money(0, currency),
             ))
             return
@@ -168,12 +168,12 @@ class OpenBrokerFRParser:
             ticker = self._tickers.get(name=m.group('name'))
             if m.group('type').startswith('НКД'):
                 # WARNING: do not use for tax calculation!
-                for (price, quantity) in ((Money(0, currency), 1), (money_total, -1)):
+                for (price, quantity_coupons) in ((Money(0, currency), 1), (money_total, -1)):
                     self._trades.append(Trade(
                         ticker=ticker,
                         datetime=dt,
                         settle_date=dt,
-                        quantity=quantity,
+                        quantity=quantity_coupons,
                         price=price,
                         fee=Money(0, currency),
                     ))
@@ -181,13 +181,13 @@ class OpenBrokerFRParser:
 
             if m.group('type') == 'Погашение':
                 key = (ticker, dt)
-                qnty = bonds_redemption[key]
+                quantity_redemption = bonds_redemption[key]
                 self._trades.append(Trade(
                     ticker=ticker,
                     datetime=dt,
                     settle_date=dt,
-                    quantity=qnty,
-                    price=-1 * money_total / int(qnty),
+                    quantity=quantity_redemption,
+                    price=-1 * money_total / int(quantity_redemption),
                     fee=Money(0, currency),
                 ))
                 del bonds_redemption[key]
@@ -200,8 +200,8 @@ class OpenBrokerFRParser:
     def _parse_non_trade_operations(self, xml_tree: ET.ElementTree):
         bonds_redemption = {}
 
-        for rec in xml_tree.findall('spot_non_trade_security_operations/item'):
-            f = rec.attrib
+        for rec_non_trade in xml_tree.findall('spot_non_trade_security_operations/item'):
+            f = rec_non_trade.attrib
             if 'Снятие ЦБ с учета. Погашение облигаций' in f['comment']:
                 ticker = self._tickers.get(grn=f['grn_code'])
                 key = (ticker, _parse_datetime(f['operation_date']))
@@ -217,8 +217,8 @@ class OpenBrokerFRParser:
                 # exit(1)
                 pass
 
-        for rec in xml_tree.findall('spot_non_trade_money_operations/item'):
-            f = rec.attrib
+        for rec_money_ops in xml_tree.findall('spot_non_trade_money_operations/item'):
+            f = rec_money_ops.attrib
             comment = f['comment']
 
             if any(comment.startswith(p) for p in ('Поставлены на торги средства клиента', 'Перевод  денежных средств с клиента')):

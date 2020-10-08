@@ -45,7 +45,8 @@ class NamedRowsParser:
         self._fields = fields
 
     def parse(self, row: List[str]) -> Dict[str, str]:
-        assert len(row) == len(self._fields), f'expect {len(self._fields)} rows {self._fields}, but got {len(row)} rows ({row})'
+        error_msg = f'expect {len(self._fields)} rows {self._fields}, but got {len(row)} rows ({row})'
+        assert len(row) == len(self._fields), error_msg
         return {k: v for k, v in zip(self._fields, row)}
 
 

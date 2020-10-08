@@ -172,18 +172,16 @@ def main():
     )
 
     trades = parser_object.trades
-    dividends = parser_object.dividends
-    fees = parser_object.fees
 
     if not trades:
         print('no trades found')
         return
 
-    first_year = min(trades[0].datetime.year, dividends[0].date.year) if dividends else trades[0].datetime.year
+    first_year = min(trades[0].datetime.year, parser_object.dividends[0].date.year) if parser_object.dividends else trades[0].datetime.year
     cbrates_df = ExchangeRatesRUB(year_from=first_year, cache_dir=args.cache_dir).dataframe()
 
-    dividends_report = prepare_dividends_report(dividends, cbrates_df, args.verbose) if dividends else None
-    fees_report = prepare_fees_report(fees, cbrates_df) if fees else None
+    dividends_report = prepare_dividends_report(parser_object.dividends, cbrates_df, args.verbose) if parser_object.dividends else None
+    fees_report = prepare_fees_report(parser_object.fees, cbrates_df) if parser_object.fees else None
 
     portfolio, finished_trades = analyze_trades_fifo(trades)
     if finished_trades:
