@@ -23,8 +23,17 @@ jobs:
 
     - name: Install package
       run: |
+        poetry --version
         poetry install
 
     - name: Run tests
       run: |
         poetry run pytest -ra -v
+
+    - name: Run MyPy
+      run: |
+        poetry run mypy investments/
+
+    - name: Run flake8
+      run: |
+        poetry run flake8 investments/

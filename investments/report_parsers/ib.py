@@ -6,10 +6,10 @@ from typing import Dict, Iterator, List, Tuple
 
 from investments.currency import Currency
 from investments.dividend import Dividend
+from investments.fees import Fee
 from investments.money import Money
 from investments.ticker import Ticker, TickerKind
 from investments.trade import Trade
-from investments.fees import Fee
 
 
 def _parse_datetime(strval: str):
@@ -45,7 +45,8 @@ class NamedRowsParser:
         self._fields = fields
 
     def parse(self, row: List[str]) -> Dict[str, str]:
-        assert len(row) == len(self._fields), f'expect {len(self._fields)} rows {self._fields}, but got {len(row)} rows ({row})'
+        error_msg = f'expect {len(self._fields)} rows {self._fields}, but got {len(row)} rows ({row})'
+        assert len(row) == len(self._fields), error_msg
         return {k: v for k, v in zip(self._fields, row)}
 
 

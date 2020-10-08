@@ -1,5 +1,5 @@
 import datetime
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET  # type: ignore
 from typing import List, Tuple
 
 import pandas  # type: ignore
