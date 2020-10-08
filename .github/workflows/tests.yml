@@ -17,7 +17,9 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Install poetry
-      uses: Gr1N/setup-poetry@v4
+      run: |
+        curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+        echo "::set-env name=PATH::$HOME/.poetry/bin:$PATH"
 
     - name: Install package
       run: |
@@ -28,7 +30,10 @@ jobs:
       run: |
         poetry run pytest -ra -v
 
-    - name: Run linters
+    - name: Run MyPy
       run: |
         poetry run mypy investments/
+
+    - name: Run flake8
+      run: |
         poetry run flake8 investments/
