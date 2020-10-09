@@ -15,8 +15,8 @@ $ pip install investments --upgrade --user
 - расчет сделок по методу ФИФО, учет даты расчетов (settle date)
 - конвертация по курсу ЦБ
 - раздельный результат сделок по акциям и опционам + дивиденды
+- учёт начисленных процентов на остаток по счету
 - пока **НЕ** учитывает комисии по сделкам (т.е. налог будет немного больше, в пользу налоговой)
-- пока **НЕ** учитываются проценты на остаток по счету
 - пока **НЕ** поддерживаются сплиты
 - пока **НЕ** поддерживаются сделки Forex, сделка пропускается и выводится сообщение о том, что это может повлиять на итоговый отчет
 
@@ -65,7 +65,7 @@ $ cd investments
 
 $ poetry install
 $ poetry run ibtax
-usage: ibtax [-h] --activity-reports-dir ACTIVITY_REPORTS_DIR --confirmation-reports-dir CONFIRMATION_REPORTS_DIR [--cache-dir CACHE_DIR] [--years YEARS]
+usage: ibtax [-h] --activity-reports-dir ACTIVITY_REPORTS_DIR --confirmation-reports-dir CONFIRMATION_REPORTS_DIR [--cache-dir CACHE_DIR] [--years YEARS] [--verbose]
 ibtax: error: the following arguments are required: --activity-reports-dir, --confirmation-reports-dir
 
 $ vim investments/ibtax/ibtax.py # edit main file for example

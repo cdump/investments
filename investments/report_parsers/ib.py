@@ -7,6 +7,7 @@ from typing import Dict, Iterator, List, Tuple
 from investments.currency import Currency
 from investments.dividend import Dividend
 from investments.fees import Fee
+from investments.interests import Interest
 from investments.money import Money
 from investments.ticker import Ticker, TickerKind
 from investments.trade import Trade
@@ -100,9 +101,13 @@ class InteractiveBrokersReportParser:
         self._trades = []
         self._dividends = []
         self._fees: List[Fee] = []
+        self._interests: List[Interest] = []
         self._deposits_and_withdrawals = []
         self._tickers = TickersStorage()
         self._settle_dates = {}
+
+    def __repr__(self):
+        return f'IbParser(trades={len(self.trades)}, dividends={len(self.dividends)}, fees={len(self.fees)}, interests={len(self.interests)})'  # noqa: WPS221
 
     @property
     def trades(self) -> List:
@@ -117,8 +122,12 @@ class InteractiveBrokersReportParser:
         return self._deposits_and_withdrawals
 
     @property
-    def fees(self) -> List:
+    def fees(self) -> List[Fee]:
         return self._fees
+
+    @property
+    def interests(self) -> List[Interest]:
+        return self._interests
 
     def parse_csv(self, *, activity_csvs: List[str], trade_confirmation_csvs: List[str]):
         # 1. parse tickers info
@@ -144,7 +153,9 @@ class InteractiveBrokersReportParser:
                     # 'Account Information', 'Cash Report', 'Change in Dividend Accruals', 'Change in NAV',
                     # 'Codes',
                     'Fees': self._parse_fees,
-                    # 'Interest Accruals', 'Interest', 'Mark-to-Market Performance Summary',
+                    # 'Interest Accruals',
+                    'Interest': self._parse_interests,
+                    # 'Mark-to-Market Performance Summary',
                     # 'Net Asset Value', 'Notes/Legal Notes', 'Open Positions', 'Realized & Unrealized Performance Summary',
                     # 'Statement', '\ufeffStatement', 'Total P/L for Statement Period', 'Transaction Fees',
                 })
@@ -152,6 +163,7 @@ class InteractiveBrokersReportParser:
         # 4. sort
         self._trades.sort(key=lambda x: x.datetime)
         self._dividends.sort(key=lambda x: x.date)
+        self._interests.sort(key=lambda x: x.date)
         self._deposits_and_withdrawals.sort(key=lambda x: x[0])
 
     def _parse_trade_confirmation_csv(self, csv_reader: Iterator[List[str]]):
@@ -293,3 +305,10 @@ class InteractiveBrokersReportParser:
         amount = Money(f['Amount'], currency)
         description = f"{f['Subtitle']} - {f['Description']}"
         self._fees.append(Fee(date, amount, description))
+
+    def _parse_interests(self, f: Dict[str, str]):
+        currency = Currency.parse(f['Currency'])
+        date = _parse_date(f['Date'])
+        amount = Money(f['Amount'], currency)
+        description = f['Description']
+        self._interests.append(Interest(date, amount, description))
