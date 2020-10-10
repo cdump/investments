@@ -6,7 +6,7 @@ from typing import List, Optional, Tuple
 import pandas  # type: ignore
 
 from investments.currency import Currency
-from investments.data_providers.cbr import ExchangeRatesRUB
+from investments.data_providers import cbr
 from investments.dividend import Dividend
 from investments.fees import Fee
 from investments.interests import Interest
@@ -25,7 +25,7 @@ def prepare_trades_report(df: pandas.DataFrame, usdrub_rates_df: pandas.DataFram
     df = df.join(tax_years, how='left', on='N')
 
     df = df.join(usdrub_rates_df, how='left', on=tax_date_column)
-    df['total_rub'] = df.apply(lambda x: x['total'].convert_to(x['rate']).round(digits=2), axis=1)
+    df['total_rub'] = df.apply(lambda x: cbr.convert_to_rub(x['total'], x[tax_date_column]).round(digits=2), axis=1)
 
     df['profit_rub'] = df['total_rub']
     df.loc[df['quantity'] >= 0, 'profit_rub'] *= -1
@@ -48,8 +48,9 @@ def prepare_dividends_report(dividends: List[Dividend], usdrub_rates_df: pandas.
 
     df = df.join(usdrub_rates_df, how='left', on='date')
 
-    df['amount_rub'] = df.apply(lambda x: x['amount'].convert_to(x['rate']).round(digits=2), axis=1)
-    df['tax_paid_rub'] = df.apply(lambda x: x['tax_paid'].convert_to(x['rate']).round(digits=2), axis=1)
+    df['amount_rub'] = df.apply(lambda x: cbr.convert_to_rub(x['amount'], x['date']).round(digits=2), axis=1)
+    df['tax_paid_rub'] = df.apply(lambda x: cbr.convert_to_rub(x['tax_paid'], x['date']).round(digits=2), axis=1)
+
     if verbose:
         df['tax_rate'] = df.apply(lambda x: round(x['tax_paid'].amount * 100 / x['amount'].amount, 2), axis=1)
 
@@ -65,7 +66,7 @@ def prepare_fees_report(fees: List[Fee], usdrub_rates_df: pandas.DataFrame) -> p
 
     df = df.join(usdrub_rates_df, how='left', on='date')
 
-    df['amount_rub'] = df.apply(lambda x: x['amount'].convert_to(x['rate']).round(digits=2), axis=1)
+    df['amount_rub'] = df.apply(lambda x: cbr.convert_to_rub(x['amount'], x['date']).round(digits=2), axis=1)
     return df
 
 
@@ -78,7 +79,7 @@ def prepare_interests_report(interests: List[Interest], usdrub_rates_df: pandas.
 
     df = df.join(usdrub_rates_df, how='left', on='date')
 
-    df['amount_rub'] = df.apply(lambda x: x['amount'].convert_to(x['rate']).round(digits=2), axis=1)
+    df['amount_rub'] = df.apply(lambda x: cbr.convert_to_rub(x['amount'], x['date']).round(digits=2), axis=1)
     return df
 
 
@@ -161,7 +162,6 @@ def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.D
         print('______' * 8, f'EOF {year}', '______' * 8, '\n\n\n')
 
 
-
 def csvs_in_dir(directory: str):
     ret = []
     for fname in os.scandir(directory):
@@ -219,7 +219,9 @@ def main():
 
     # fixme first_year without dividends
     first_year = min(trades[0].datetime.year, dividends[0].date.year) if dividends else trades[0].datetime.year
-    cbrates_df = ExchangeRatesRUB(year_from=first_year, cache_dir=args.cache_dir).dataframe
+
+    cbr.init_client(cbr.ExchangeRatesRUB(year_from=first_year, cache_dir=args.cache_dir))
+    cbrates_df = cbr.get_client().dataframe
 
     dividends_report = prepare_dividends_report(dividends, cbrates_df, args.verbose) if dividends else None
     fees_report = prepare_fees_report(fees, cbrates_df) if fees else None

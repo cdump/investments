@@ -1,8 +1,10 @@
+from datetime import datetime
 from decimal import Decimal
 
 import pytest
 
 from investments.currency import Currency
+from investments.data_providers.cbr import get_client, convert_to_rub
 from investments.money import Money
 
 
@@ -83,15 +85,18 @@ def test_money_float():
     assert msum.amount == m_expect.amount
 
 
-def test_convert_to():
-    usdrub_rate = Money(78.17, Currency.RUB)
+def test_convert_to_rub():
+    rate_date = datetime(2020, 3, 31)
+    get_client().get_rate(rate_date)  # 77.7325₽
 
     test_usd = Money(10.98, Currency.USD)
-    res = test_usd.convert_to(usdrub_rate)
-    assert res.amount == Decimal('858.3066')
+    res = convert_to_rub(test_usd, rate_date)
+
+    assert res.amount == Decimal('853.50285')
     assert res.currency == Currency.RUB
 
     test_rub = Money(Decimal('858.3066'), Currency.RUB)
-    res = test_rub.convert_to(usdrub_rate)
+    res = convert_to_rub(test_rub, rate_date)
+
     assert res.amount == Decimal('858.3066')
     assert res.currency == Currency.RUB

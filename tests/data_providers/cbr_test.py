@@ -11,6 +11,7 @@ test_cases = [
     (datetime(2015, 1, 15), Money('66.0983', Currency.RUB)),
     (datetime(2015, 3, 7), Money('59.9938', Currency.RUB)),
     (datetime(2015, 3, 8), Money('59.9938', Currency.RUB)),
+    (datetime(2020, 1, 9), Money('61.9057', Currency.RUB)),
     (datetime(2020, 3, 31), Money('77.7325', Currency.RUB)),
 ]
 
