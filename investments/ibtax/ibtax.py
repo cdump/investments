@@ -173,6 +173,27 @@ def csvs_in_dir(directory: str):
     return ret
 
 
+def parse_reports(activity_reports_dir: str, confirmation_reports_dir: str) -> InteractiveBrokersReportParser:
+    parser_object = InteractiveBrokersReportParser()
+
+    activity_reports = csvs_in_dir(activity_reports_dir)
+    confirmation_reports = csvs_in_dir(confirmation_reports_dir)
+
+    for apath in activity_reports:
+        logging.info('Activity report %s', apath)
+    for cpath in confirmation_reports:
+        logging.info('Confirmation report %s', cpath)
+
+    logging.info('start reports parse')
+    parser_object.parse_csv(
+        activity_csvs=activity_reports,
+        trade_confirmation_csvs=confirmation_reports,
+    )
+    logging.info(f'end reports parse {parser_object}')
+
+    return parser_object
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--activity-reports-dir', type=str, required=True, help='directory with InteractiveBrokers .csv activity reports')
@@ -189,24 +210,7 @@ def main():
     if args.verbose:
         logging.basicConfig(level=logging.INFO)
 
-    parser_object = InteractiveBrokersReportParser()
-
-    activity_reports = csvs_in_dir(args.activity_reports_dir)
-    confirmation_reports = csvs_in_dir(args.confirmation_reports_dir)
-
-    for apath in activity_reports:
-        logging.info('Activity report %s', apath)
-    for cpath in confirmation_reports:
-        logging.info('Confirmation report %s', cpath)
-
-    logging.info('========' * 8)
-
-    logging.info('start reports parse')
-    parser_object.parse_csv(
-        activity_csvs=activity_reports,
-        trade_confirmation_csvs=confirmation_reports,
-    )
-    logging.info(f'end reports parse {parser_object}')
+    parser_object = parse_reports(args.activity_reports_dir, args.confirmation_reports_dir)
 
     trades = parser_object.trades
     dividends = parser_object.dividends
