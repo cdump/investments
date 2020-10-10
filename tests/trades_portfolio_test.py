@@ -15,11 +15,11 @@ def test_analyze_portfolio_different_kinds():
     dt = datetime.datetime.now()
 
     request_trades = [
-        Trade(ticker=ticker_stock, datetime=dt, settle_date=dt.date(), quantity=-3, price=Money(4.2, Currency.USD),
+        Trade(ticker=ticker_stock, trade_date=dt, settle_date=dt.date(), quantity=-3, price=Money(4.2, Currency.USD),
               fee=Money(1, Currency.USD)),
-        Trade(ticker=ticker_stock, datetime=dt, settle_date=dt.date(), quantity=8, price=Money(4.2, Currency.USD),
+        Trade(ticker=ticker_stock, trade_date=dt, settle_date=dt.date(), quantity=8, price=Money(4.2, Currency.USD),
               fee=Money(1, Currency.USD)),
-        Trade(ticker=ticker_option, datetime=dt, settle_date=dt.date(), quantity=10, price=Money(4.2, Currency.USD),
+        Trade(ticker=ticker_option, trade_date=dt, settle_date=dt.date(), quantity=10, price=Money(4.2, Currency.USD),
               fee=Money(1, Currency.USD)),
     ]
 
@@ -53,7 +53,7 @@ def test_analyze_portfolio(trades: list, expect_portfolio: dict):
         dt = datetime.datetime.strptime(date, '%Y-%m-%d')
         request_trades.append(Trade(
             ticker=Ticker(symbol=ticker, kind=TickerKind.Stock),
-            datetime=dt,
+            trade_date=dt,
             settle_date=dt.date(),
             quantity=qty,
             price=Money(1, Currency.USD),

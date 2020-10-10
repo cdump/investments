@@ -110,11 +110,11 @@ class InteractiveBrokersReportParser:
         return f'IbParser(trades={len(self.trades)}, dividends={len(self.dividends)}, fees={len(self.fees)}, interests={len(self.interests)})'  # noqa: WPS221
 
     @property
-    def trades(self) -> List:
+    def trades(self) -> List[Trade]:
         return self._trades
 
     @property
-    def dividends(self) -> List:
+    def dividends(self) -> List[Dividend]:
         return self._dividends
 
     @property
@@ -161,7 +161,7 @@ class InteractiveBrokersReportParser:
                 })
 
         # 4. sort
-        self._trades.sort(key=lambda x: x.datetime)
+        self._trades.sort(key=lambda x: x.trade_date)
         self._dividends.sort(key=lambda x: x.date)
         self._interests.sort(key=lambda x: x.date)
         self._deposits_and_withdrawals.sort(key=lambda x: x[0])
@@ -231,7 +231,7 @@ class InteractiveBrokersReportParser:
 
         self._trades.append(Trade(
             ticker=ticker,
-            datetime=dt,
+            trade_date=dt,
             settle_date=settle_date,
             quantity=int(f['Quantity']) * quantity_multiplier,
             price=Money(f['T. Price'], currency),

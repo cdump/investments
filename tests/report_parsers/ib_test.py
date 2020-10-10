@@ -167,20 +167,24 @@ Trades,Total,,Stocks,USD,,,,,,-57144.745,-25.563491343,57180.290364603,9.981873,
 
     # buy trade
     assert p.trades[0].ticker.symbol == 'VT'
-    assert p.trades[0].datetime == _parse_datetime('2020-01-31, 09:30:00')
+    assert p.trades[0].trade_date == _parse_datetime('2020-01-31, 09:30:00')
     assert p.trades[0].settle_date == _parse_date('2020-02-04')
     assert p.trades[0].quantity == 10
     assert p.trades[0].price.amount == Decimal('80.62')
     assert p.trades[0].price.currency == Currency.USD
     assert p.trades[0].fee.amount == Decimal('-1')
     assert p.trades[0].fee.currency == Currency.USD
+    assert p.trades[0].fee_per_piece.currency == Currency.USD
+    assert p.trades[0].fee_per_piece.amount == Decimal('-0.1')
 
     # sell trade
     assert p.trades[1].ticker.symbol == 'VT'
-    assert p.trades[1].datetime == _parse_datetime('2020-02-10, 09:38:00')
+    assert p.trades[1].trade_date == _parse_datetime('2020-02-10, 09:38:00')
     assert p.trades[1].settle_date == _parse_date('2020-02-12')
     assert p.trades[1].quantity == -10
     assert p.trades[1].price.amount == Decimal('81.82')
     assert p.trades[1].price.currency == Currency.USD
     assert p.trades[1].fee.amount == Decimal('-1.01812674')
     assert p.trades[1].fee.currency == Currency.USD
+    assert p.trades[1].fee_per_piece.amount == Decimal('-0.101812674')
+    assert p.trades[1].fee_per_piece.currency == Currency.USD

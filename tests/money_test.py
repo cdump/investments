@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import pytest
 
 from investments.currency import Currency
@@ -40,6 +42,10 @@ def test_money():
     r = rub5 - rub3
     assert r.amount == 2
     assert r.currency == Currency.RUB
+
+    negative_money = Money(-1, Currency.RUB)
+    assert negative_money.amount == Decimal('-1')
+    assert abs(negative_money).amount == Decimal('1')
 
 
 def test_money_zero():

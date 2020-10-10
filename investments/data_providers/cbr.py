@@ -42,6 +42,7 @@ class ExchangeRatesRUB:
 
         end_date = (datetime.datetime.utcnow() + datetime.timedelta(days=1)).strftime('%d/%m/%Y')
         r = requests.get(f'http://www.cbr.ru/scripts/XML_dynamic.asp?date_req1=01/01/{year_from}&date_req2={end_date}&VAL_NM_RQ={currency_code}')
+
         tree = ET.fromstring(r.text)
 
         rates_data: List[Tuple[datetime.date, Money]] = []
@@ -65,10 +66,18 @@ class ExchangeRatesRUB:
     def dataframe(self) -> pandas.DataFrame:
         return self._df
 
-    def get_rate(self, date: datetime.date) -> Money:
-        return self._df.loc[date].item()
+    def get_rate(self, dt: datetime.date) -> Money:
+        if isinstance(dt, datetime.datetime):
+            dt = datetime.datetime.combine(dt.date(), datetime.datetime.min.time())
+
+        if isinstance(dt, datetime.date):
+            dt = datetime.datetime.combine(dt, datetime.datetime.min.time())
+
+        return self._df.loc[dt].item()
 
     def convert_to_rub(self, source: Money, rate_date: datetime.date) -> Money:
+        assert isinstance(rate_date, datetime.date)
+
         if source.currency == Currency.RUB:
             return Money(source.amount, Currency.RUB)
 

@@ -48,6 +48,9 @@ class Money:
             raise TypeError(f'different currencies: {self._currency} & {other.currency}')
         return Money(self._amount + other.amount, self._currency)
 
+    def __abs__(self) -> 'Money':
+        return Money(abs(self.amount), self.currency)
+
     def __radd__(self, other) -> 'Money':
         return self.__add__(other)
 
