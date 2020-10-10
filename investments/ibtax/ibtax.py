@@ -101,7 +101,15 @@ def _show_interests_report(interests: pandas.DataFrame, year: int):
     print('\n\n')
 
 
-def _show_portfolio_report(portfolio: List[Tuple[str, int]]):
+def _show_dividends_report(dividends: pandas.DataFrame, year: int):
+    dividends_year = dividends[dividends['tax_year'] == year].drop(columns=['tax_year'])
+    dividends_year['N'] -= dividends_year['N'].iloc[0] - 1
+    _show_header('DIVIDENDS')
+    print(dividends_year.set_index(['N', 'ticker', 'date']).to_string())
+    print('\n\n')
+
+
+def show_portfolio_report(portfolio: List[Tuple[str, int]]):
     _show_header('PORTFOLIO')
     for ticker, qty in portfolio:
         print(f'{ticker}\tx\t{qty}')
@@ -110,7 +118,7 @@ def _show_portfolio_report(portfolio: List[Tuple[str, int]]):
 
 def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.DataFrame],
                 fees: Optional[pandas.DataFrame], interests: Optional[pandas.DataFrame],
-                portfolio: List[Tuple[str, int]], filter_years: List[int]):  # noqa: WPS318,WPS319
+                filter_years: List[int]):  # noqa: WPS318,WPS319
     years = set()
     for report in (trades, dividends, fees, interests):
         if report is not None:
@@ -122,13 +130,7 @@ def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.D
         print('\n', '______' * 8, f'  {year}  ', '______' * 8, '\n')
 
         if dividends is not None:
-            dividends_year = dividends[dividends['tax_year'] == year].drop(columns=['tax_year'])
-            dividends_year['N'] -= dividends_year['N'].iloc[0] - 1
-
-            _show_header('DIVIDENDS')
-            print(dividends_year.set_index(['N', 'ticker', 'date']).to_string())
-            # print('\n>>> DIVIDENDS PROFIT BEFORE TAXES:\n   ', dividends_year['amount_rub'].sum())
-            print('\n\n')
+            _show_dividends_report(dividends, year)
 
         if trades is not None:
             trades_year = trades[trades['tax_year'] == year].drop(columns=['tax_year', 'datetime'])
@@ -158,7 +160,6 @@ def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.D
 
         print('______' * 8, f'EOF {year}', '______' * 8, '\n\n\n')
 
-    _show_portfolio_report(portfolio)
 
 
 def csvs_in_dir(directory: str):
@@ -233,7 +234,8 @@ def main():
     else:
         trades_report = None
 
-    show_report(trades_report, dividends_report, fees_report, interests_report, portfolio, args.years)
+    show_report(trades_report, dividends_report, fees_report, interests_report, args.years)
+    show_portfolio_report(portfolio)
 
 
 if __name__ == '__main__':
