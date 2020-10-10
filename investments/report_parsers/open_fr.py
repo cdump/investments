@@ -98,7 +98,7 @@ class OpenBrokerFRParser:
         self._parse_non_trade_operations(tree)
         self._parse_trades(tree)
 
-        self._trades.sort(key=lambda x: x.datetime)
+        self._trades.sort(key=lambda x: x.trade_date)
         self._dividends.sort(key=lambda x: x.date)
         self._deposits_and_withdrawals.sort(key=lambda x: x[0])
 

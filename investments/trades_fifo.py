@@ -10,11 +10,23 @@ from investments.trade import Trade
 class FinishedTrade(NamedTuple):
     N: int
     ticker: Ticker
-    datetime: datetime.datetime
+
+    # дата сделки, нужна для расчёта комиссии в рублях на дату
+    trade_date: datetime.datetime
+
+    # дата поставки, нужна для расчёта цены сделки в рублях на дату
     settle_date: datetime.date
+
     quantity: int
+
+    # цена одной бумаги
     price: Money
+
+    # стоимость сделки [quantity * price] (Proceeds в отчёте)
+    # todo rm?
     total: Money
+
+    # todo to RUB currency
     profit: Money
 
 
@@ -104,7 +116,7 @@ def analyze_trades_fifo(trades: Iterable[Trade]) -> List[FinishedTrade]:
             finished_trades.append(FinishedTrade(
                 finished_trade_id,
                 trade.ticker,
-                matched_trade.datetime,
+                matched_trade.trade_date,
                 matched_trade.settle_date,
                 q,
                 matched_trade.price,
@@ -125,7 +137,7 @@ def analyze_trades_fifo(trades: Iterable[Trade]) -> List[FinishedTrade]:
             finished_trades.append(FinishedTrade(
                 finished_trade_id,
                 trade.ticker,
-                trade.datetime,
+                trade.trade_date,
                 trade.settle_date,
                 q,
                 trade.price,

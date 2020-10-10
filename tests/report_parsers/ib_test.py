@@ -167,7 +167,7 @@ Trades,Total,,Stocks,USD,,,,,,-57144.745,-25.563491343,57180.290364603,9.981873,
 
     # buy trade
     assert p.trades[0].ticker.symbol == 'VT'
-    assert p.trades[0].datetime == _parse_datetime('2020-01-31, 09:30:00')
+    assert p.trades[0].trade_date == _parse_datetime('2020-01-31, 09:30:00')
     assert p.trades[0].settle_date == _parse_date('2020-02-04')
     assert p.trades[0].quantity == 10
     assert p.trades[0].price.amount == Decimal('80.62')
@@ -177,7 +177,7 @@ Trades,Total,,Stocks,USD,,,,,,-57144.745,-25.563491343,57180.290364603,9.981873,
 
     # sell trade
     assert p.trades[1].ticker.symbol == 'VT'
-    assert p.trades[1].datetime == _parse_datetime('2020-02-10, 09:38:00')
+    assert p.trades[1].trade_date == _parse_datetime('2020-02-10, 09:38:00')
     assert p.trades[1].settle_date == _parse_date('2020-02-12')
     assert p.trades[1].quantity == -10
     assert p.trades[1].price.amount == Decimal('81.82')

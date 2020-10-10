@@ -12,19 +12,22 @@ from investments.fees import Fee
 from investments.interests import Interest
 from investments.money import Money
 from investments.report_parsers.ib import InteractiveBrokersReportParser
-from investments.trades_fifo import analyze_portfolio, analyze_trades_fifo
+from investments.trades_fifo import analyze_portfolio, analyze_trades_fifo, FinishedTrade
 
 
-def prepare_trades_report(df: pandas.DataFrame, usdrub_rates_df: pandas.DataFrame) -> pandas.DataFrame:
+def prepare_trades_report(finished_trades: List[FinishedTrade], usdrub_rates_df: pandas.DataFrame) -> pandas.DataFrame:
+    df = pandas.DataFrame(finished_trades, columns=finished_trades[0]._fields)  # noqa: WPS437
     tax_date_column = 'settle_date'
 
-    df['date'] = df['datetime'].dt.normalize()
+    df['trade_date'] = df['trade_date'].dt.normalize()
     df['settle_date'] = pandas.to_datetime(df['settle_date'])
 
     tax_years = df.groupby('N')[tax_date_column].max().map(lambda x: x.year).rename('tax_year')
     df = df.join(tax_years, how='left', on='N')
 
-    df = df.join(usdrub_rates_df, how='left', on=tax_date_column)
+    df = df.join(usdrub_rates_df['rate'].rename('settle_rate'), how='left', on=tax_date_column)
+    df = df.join(usdrub_rates_df['rate'].rename('fee_rate'), how='left', on='trade_date')
+
     df['total_rub'] = df.apply(lambda x: cbr.convert_to_rub(x['total'], x[tax_date_column]).round(digits=2), axis=1)
 
     df['profit_rub'] = df['total_rub']
@@ -33,7 +36,7 @@ def prepare_trades_report(df: pandas.DataFrame, usdrub_rates_df: pandas.DataFram
     profit = df.groupby('N')['profit_rub'].sum().reset_index().set_index('N')
     df = df.join(profit, how='left', on='N', lsuffix='del')
     df.drop(columns=['profit_rubdel'], axis=0, inplace=True)
-    df.loc[~df.index.isin(df.groupby('N')['datetime'].idxmax()), 'profit_rub'] = Money(0, Currency.RUB)
+    df.loc[~df.index.isin(df.groupby('N')['trade_date'].idxmax()), 'profit_rub'] = Money(0, Currency.RUB)
 
     return df
 
@@ -134,11 +137,11 @@ def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.D
             _show_dividends_report(dividends, year)
 
         if trades is not None:
-            trades_year = trades[trades['tax_year'] == year].drop(columns=['tax_year', 'datetime'])
+            trades_year = trades[trades['tax_year'] == year].drop(columns=['tax_year'])
             trades_year['N'] -= trades_year['N'].iloc[0] - 1
 
             _show_header('TRADES')
-            print(trades_year.set_index(['N', 'ticker', 'date']).to_string())
+            print(trades_year.set_index(['N', 'ticker', 'trade_date']).to_string())
             print('\n\n')
 
             _show_header('TRADES RESULTS BEFORE TAXES')
@@ -222,7 +225,7 @@ def main():
         return
 
     # fixme first_year without dividends
-    first_year = min(trades[0].datetime.year, dividends[0].date.year) if dividends else trades[0].datetime.year
+    first_year = min(trades[0].trade_date.year, dividends[0].date.year) if dividends else trades[0].trade_date.year
 
     cbr.init_client(cbr.ExchangeRatesRUB(year_from=first_year, cache_dir=args.cache_dir))
     cbrates_df = cbr.get_client().dataframe
@@ -234,11 +237,7 @@ def main():
     finished_trades = analyze_trades_fifo(trades)
     portfolio = analyze_portfolio(trades)
 
-    if finished_trades:
-        finished_trades_df = pandas.DataFrame(finished_trades, columns=finished_trades[0]._fields)  # noqa: WPS437
-        trades_report = prepare_trades_report(finished_trades_df, cbrates_df)
-    else:
-        trades_report = None
+    trades_report = prepare_trades_report(finished_trades, cbrates_df) if finished_trades else None
 
     show_report(trades_report, dividends_report, fees_report, interests_report, args.years)
     show_portfolio_report(portfolio)

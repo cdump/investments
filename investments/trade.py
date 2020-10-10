@@ -7,8 +7,12 @@ from investments.ticker import Ticker
 
 class Trade(NamedTuple):
     ticker: Ticker
-    datetime: datetime.datetime
+    trade_date: datetime.datetime
     settle_date: datetime.date
     quantity: int
+
+    # цена одной бумаги
     price: Money
+
+    # комиссия за сделку
     fee: Money

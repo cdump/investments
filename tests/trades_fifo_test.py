@@ -1,4 +1,5 @@
 import datetime
+from decimal import Decimal
 
 import pytest
 
@@ -6,7 +7,7 @@ from investments.currency import Currency
 from investments.money import Money
 from investments.ticker import Ticker, TickerKind
 from investments.trade import Trade
-from investments.trades_fifo import analyze_trades_fifo
+from investments.trades_fifo import analyze_trades_fifo, FinishedTrade
 
 analyze_trades_fifo_testdata = [
     # trades: [(Date, Symbol, Quantity, Price)]
@@ -42,7 +43,7 @@ def test_analyze_trades_fifo(trades, expect_trades):
         dt = datetime.datetime.strptime(date, '%Y-%m-%d')
         request_trades.append(Trade(
             ticker=Ticker(symbol=ticker, kind=TickerKind.Stock),
-            datetime=dt,
+            trade_date=dt,
             settle_date=dt.date(),
             quantity=qty,
             price=Money(price, Currency.USD),
@@ -59,3 +60,105 @@ def test_analyze_trades_fifo(trades, expect_trades):
         assert expected[2] == trade.quantity, f'expect trade quantity={expected[2]} but got {trade.quantity}'
         assert expected[3] == trade.total.amount, f'expect trade total={expected[3]} but got {trade.total.amount}'
         assert expected[4] == trade.profit.amount, f'expect trade profit={expected[4]} but got {trade.profit.amount}'
+
+
+def test_trades_with_fee_simple():
+    """Купили/продали одной операцией
+
+    """
+
+    request_trades = []
+    ticker = Ticker(symbol='VT', kind=TickerKind.Stock)
+
+    # buy 10
+    request_trades.append(Trade(
+        ticker=ticker,
+        trade_date=datetime.datetime(year=2020, month=1, day=31),  # 63,0359₽
+        settle_date=datetime.datetime(year=2020, month=2, day=4),  # 63,9091₽
+        quantity=10,
+        price=Money(80.62, Currency.USD),
+        fee=Money(-1, Currency.USD),
+    ))
+    # sell 10
+    request_trades.append(Trade(
+        ticker=ticker,
+        trade_date=datetime.datetime(year=2020, month=2, day=10),  # 63,4720₽
+        settle_date=datetime.datetime(year=2020, month=2, day=12),  # 63,9490₽
+        quantity=-10,
+        price=Money(81.82, Currency.USD),
+        fee=Money(Decimal('-1.01812674'), Currency.USD),
+    ))
+
+    finished_trades = analyze_trades_fifo(request_trades)
+
+    assert len(finished_trades) == 2
+    buy_trade: FinishedTrade = finished_trades[0]
+    assert buy_trade.trade_date == datetime.datetime(year=2020, month=1, day=31)
+    assert buy_trade.settle_date == datetime.datetime(year=2020, month=2, day=4)
+    assert buy_trade.quantity == 10
+    assert buy_trade.price.amount == Decimal('80.62')
+    assert buy_trade.fee.amount == Decimal('-1')
+    assert buy_trade.basis == Decimal('807.20')  # 10 * 80.62 + 1
+    assert buy_trade.basis_rub == Decimal('51586.55')  # 10 * (80.62 * 63.9091) + (1 * 63.0359)
+    assert buy_trade.profit == Decimal(0)
+    assert buy_trade.profit_rub == Decimal(0)
+
+
+# def test_trades_with_fee_few_trades():
+#     """Несколько сделок покупки и несколько продаж вперемешку.
+#
+#     """
+#
+#     request_trades = []
+#     ticker = Ticker(symbol='VT', kind=TickerKind.Stock)
+#
+#     # buy 10
+#     request_trades.append(Trade(
+#         ticker=ticker,
+#         trade_date=datetime.datetime(year=2020, month=1, day=31),  # 63,0359₽
+#         settle_date=datetime.datetime(year=2020, month=2, day=4),  # 63,9091₽
+#         quantity=10,
+#         price=Money(80.62, Currency.USD),
+#         fee=Money(-1, Currency.USD),
+#     ))
+#     # sell 3
+#     request_trades.append(Trade(
+#         ticker=ticker,
+#         trade_date=datetime.datetime(year=2020, month=2, day=10),  # 63,4720₽
+#         settle_date=datetime.datetime(year=2020, month=2, day=12),  # 63,9490₽
+#         quantity=-10,
+#         price=Money(81.82, Currency.USD),
+#         fee=Money(Decimal('-1.01812674'), Currency.USD),
+#     ))
+#     # sell 1
+#     request_trades.append(Trade(
+#         ticker=ticker,
+#         trade_date=datetime.datetime(year=2020, month=2, day=10),  # 63,4720₽
+#         settle_date=datetime.datetime(year=2020, month=2, day=12),  # 63,9490₽
+#         quantity=-10,
+#         price=Money(81.82, Currency.USD),
+#         fee=Money(Decimal('-1.01812674'), Currency.USD),
+#     ))
+#     # buy 17
+#     request_trades.append(Trade(
+#         ticker=ticker,
+#         trade_date=datetime.datetime(year=2020, month=2, day=10),  # 63,4720₽
+#         settle_date=datetime.datetime(year=2020, month=2, day=12),  # 63,9490₽
+#         quantity=-10,
+#         price=Money(81.82, Currency.USD),
+#         fee=Money(Decimal('-1.01812674'), Currency.USD),
+#     ))
+#     # sell 9
+#     request_trades.append(Trade(
+#         ticker=ticker,
+#         trade_date=datetime.datetime(year=2020, month=2, day=10),  # 63,4720₽
+#         settle_date=datetime.datetime(year=2020, month=2, day=12),  # 63,9490₽
+#         quantity=-10,
+#         price=Money(81.82, Currency.USD),
+#         fee=Money(Decimal('-1.01812674'), Currency.USD),
+#     ))
+#
+#     finished_trades = analyze_trades_fifo(request_trades)
+#
+#     assert len(finished_trades) == 2
+#
