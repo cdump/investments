@@ -12,7 +12,7 @@ from investments.fees import Fee
 from investments.interests import Interest
 from investments.money import Money
 from investments.report_parsers.ib import InteractiveBrokersReportParser
-from investments.trades_fifo import analyze_trades_fifo
+from investments.trades_fifo import PortfolioElement, TradesAnalyzer
 
 
 def prepare_trades_report(df: pandas.DataFrame, usdrub_rates_df: pandas.DataFrame) -> pandas.DataFrame:
@@ -101,9 +101,16 @@ def _show_interests_report(interests: pandas.DataFrame, year: int):
     print('\n\n')
 
 
+def _show_portfolio_report(portfolio: List[PortfolioElement]):
+    _show_header('PORTFOLIO')
+    for elem in portfolio:
+        print(f'{elem.ticker}\tx\t{elem.quantity}')
+    print('\n\n')
+
+
 def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.DataFrame],
-                fees: Optional[pandas.DataFrame], interests: Optional[pandas.DataFrame], portfolio,
-                filter_years: List[int]):  # noqa: WPS318,WPS319
+                fees: Optional[pandas.DataFrame], interests: Optional[pandas.DataFrame],
+                portfolio: List[PortfolioElement], filter_years: List[int]):  # noqa: WPS318,WPS319
     years = set()
     for report in (trades, dividends, fees, interests):
         if report is not None:
@@ -151,9 +158,7 @@ def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.D
 
         print('______' * 8, f'EOF {year}', '______' * 8, '\n\n\n')
 
-    print('>>> PORTFOLIO <<<')
-    for v in portfolio:
-        print(v['quantity'], ' x ', v['ticker'])
+    _show_portfolio_report(portfolio)
 
 
 def csvs_in_dir(directory: str):
@@ -219,7 +224,10 @@ def main():
     fees_report = prepare_fees_report(fees, cbrates_df) if fees else None
     interests_report = prepare_interests_report(interests, cbrates_df) if interests else None
 
-    portfolio, finished_trades = analyze_trades_fifo(trades)
+    analyzer = TradesAnalyzer(trades)
+    finished_trades = analyzer.finished_trades
+    portfolio = analyzer.final_portfolio
+
     if finished_trades:
         finished_trades_df = pandas.DataFrame(finished_trades, columns=finished_trades[0]._fields)  # noqa: WPS437
         trades_report = prepare_trades_report(finished_trades_df, cbrates_df)
