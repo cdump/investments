@@ -218,7 +218,7 @@ def main():
 
     # fixme first_year without dividends
     first_year = min(trades[0].datetime.year, dividends[0].date.year) if dividends else trades[0].datetime.year
-    cbrates_df = ExchangeRatesRUB(year_from=first_year, cache_dir=args.cache_dir).dataframe
+    cbrates_df = ExchangeRatesRUB(currency=Currency.USD, year_from=first_year, cache_dir=args.cache_dir).dataframe
 
     dividends_report = prepare_dividends_report(dividends, cbrates_df, args.verbose) if dividends else None
     fees_report = prepare_fees_report(fees, cbrates_df) if fees else None

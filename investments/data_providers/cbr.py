@@ -12,20 +12,27 @@ from investments.money import Money
 
 
 class ExchangeRatesRUB:
-    def __init__(self, year_from: int = 2000, cache_dir: str = None):
-        cache = DataFrameCache(cache_dir, f'cbrates_since{year_from}.cache', datetime.timedelta(days=1))
+    def __init__(self, currency: Currency, year_from: int = 2000, cache_dir: str = None):
+        if currency == Currency.USD:
+            currency_code = 'R01235'
+        elif currency == Currency.EUR:
+            currency_code = 'R01239'
+        else:
+            raise NotImplementedError('only USD and EUR currencies supported')
+
+        cache = DataFrameCache(cache_dir, f'cbrates_{currency_code}_since{year_from}.cache', datetime.timedelta(days=1))
         df = cache.get()
         if df is not None:
             logging.info('CBR cache hit')
             self._df = df
             return
 
-        r = requests.get(f'http://www.cbr.ru/scripts/XML_dynamic.asp?date_req1=01/01/{year_from}&date_req2=01/01/2030&VAL_NM_RQ=R01235')
+        r = requests.get(f'http://www.cbr.ru/scripts/XML_dynamic.asp?date_req1=01/01/{year_from}&date_req2=01/01/2030&VAL_NM_RQ={currency_code}')
         tree = ET.fromstring(r.text)
 
         rates_data: List[Tuple[datetime.date, Money]] = []
         for rec in tree.findall('Record'):
-            assert rec.get('Id') == 'R01235', 'only USD(R01235) supported'
+            assert rec.get('Id') == currency_code
             d = datetime.datetime.strptime(rec.attrib['Date'], '%d.%m.%Y').date()
             v = rec.findtext('Value')
             assert isinstance(v, str)
