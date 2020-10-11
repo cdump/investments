@@ -18,6 +18,13 @@ def test_money():
     assert usd1 != usd7
     assert usd1 == Money(1, Currency.USD)
 
+    with pytest.raises(TypeError):
+        r = rub3 / usd1
+
+    r = rub5 / rub1
+    assert isinstance(r, float)
+    assert r == 5
+
     assert rub1 < rub3
     with pytest.raises(TypeError):
         r = rub1 < usd7

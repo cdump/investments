@@ -77,6 +77,12 @@ class Money:
         return self.__mul__(mul)
 
     def __truediv__(self, d):
-        if not isinstance(d, int):
-            return NotImplemented
-        return Money(self._amount / d, self._currency)
+        if isinstance(d, int):
+            return Money(self._amount / d, self._currency)
+
+        if isinstance(d, Money):
+            if self._currency != d.currency:
+                raise TypeError(f'different currencies: {self._currency} & {d.currency}')
+            return float(self._amount / d.amount)
+
+        return NotImplemented
