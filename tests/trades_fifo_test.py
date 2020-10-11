@@ -7,7 +7,8 @@ from investments.currency import Currency
 from investments.money import Money
 from investments.ticker import Ticker, TickerKind
 from investments.trade import Trade
-from investments.trades_fifo import analyze_trades_fifo, FinishedTrade
+from investments.trades_fifo import FinishedTrade
+from investments.trades_fifo import TradesAnalyzer
 
 analyze_trades_fifo_testdata = [
     # trades: [(Date, Symbol, Quantity, Price)]
@@ -50,7 +51,7 @@ def test_analyze_trades_fifo(trades, expect_trades):
             fee=Money(-1, Currency.USD),
         ))
 
-    finished_trades = analyze_trades_fifo(request_trades)
+    finished_trades = TradesAnalyzer(request_trades).finished_trades
 
     assert len(finished_trades) == len(
         expect_trades), f'expect {len(expect_trades)} finished trades but got {len(finished_trades)}'
@@ -89,19 +90,33 @@ def test_trades_with_fee_simple():
         fee=Money(Decimal('-1.01812674'), Currency.USD),
     ))
 
-    finished_trades = analyze_trades_fifo(request_trades)
+    finished_trades = TradesAnalyzer(request_trades).finished_trades
 
     assert len(finished_trades) == 2
+
     buy_trade: FinishedTrade = finished_trades[0]
     assert buy_trade.trade_date == datetime.datetime(year=2020, month=1, day=31)
     assert buy_trade.settle_date == datetime.datetime(year=2020, month=2, day=4)
     assert buy_trade.quantity == 10
     assert buy_trade.price.amount == Decimal('80.62')
     assert buy_trade.fee.amount == Decimal('-1')
-    assert buy_trade.basis == Decimal('807.20')  # 10 * 80.62 + 1
-    assert buy_trade.basis_rub == Decimal('51586.55')  # 10 * (80.62 * 63.9091) + (1 * 63.0359)
-    assert buy_trade.profit == Decimal(0)
-    assert buy_trade.profit_rub == Decimal(0)
+    assert buy_trade.basis.amount == Decimal('-807.20')  # 10 * 80.62 + 1 * -1
+    assert buy_trade.basis_rub.amount == Decimal('-51586.552320')  # 10 * (80.62 * 63.9091) + (1 * 63.0359) * -1
+    assert buy_trade.basis_rub.currency == Currency.RUB
+    assert buy_trade.profit.amount == Decimal(0)
+    assert buy_trade.profit_rub.amount == Decimal(0)
+
+    sell_trade: FinishedTrade = finished_trades[1]
+    assert sell_trade.trade_date == datetime.datetime(year=2020, month=2, day=10)
+    assert sell_trade.settle_date == datetime.datetime(year=2020, month=2, day=12)
+    assert sell_trade.quantity == -10
+    assert sell_trade.price.amount == Decimal('81.82')
+    assert sell_trade.fee.amount == Decimal('-1.01812674')
+    assert sell_trade.basis.amount == Decimal('817.18187326')  # 10 * 81.82 - 1.01812674
+    assert sell_trade.basis_rub.amount == Decimal('52258.449259559')  # 10 * (81.82 * 63.9490) - (1.01812674 * 63.4720)
+    assert sell_trade.basis_rub.currency == Currency.RUB
+    assert sell_trade.profit.amount == Decimal(0)
+    assert sell_trade.profit_rub.amount == Decimal(0)
 
 
 # def test_trades_with_fee_few_trades():

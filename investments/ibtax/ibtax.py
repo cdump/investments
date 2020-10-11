@@ -1,7 +1,7 @@
 import argparse
 import logging
 import os
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 import pandas  # type: ignore
 
@@ -12,7 +12,7 @@ from investments.fees import Fee
 from investments.interests import Interest
 from investments.money import Money
 from investments.report_parsers.ib import InteractiveBrokersReportParser
-from investments.trades_fifo import analyze_portfolio, analyze_trades_fifo, FinishedTrade
+from investments.trades_fifo import FinishedTrade, PortfolioElement, TradesAnalyzer
 
 
 def prepare_trades_report(finished_trades: List[FinishedTrade], usdrub_rates_df: pandas.DataFrame) -> pandas.DataFrame:
@@ -104,7 +104,6 @@ def _show_interests_report(interests: pandas.DataFrame, year: int):
     print(interests_year.set_index(['N', 'date']).to_string())
     print('\n\n')
 
-
 def _show_dividends_report(dividends: pandas.DataFrame, year: int):
     dividends_year = dividends[dividends['tax_year'] == year].drop(columns=['tax_year'])
     dividends_year['N'] -= dividends_year['N'].iloc[0] - 1
@@ -112,11 +111,10 @@ def _show_dividends_report(dividends: pandas.DataFrame, year: int):
     print(dividends_year.set_index(['N', 'ticker', 'date']).to_string())
     print('\n\n')
 
-
-def show_portfolio_report(portfolio: List[Tuple[str, int]]):
+def show_portfolio_report(portfolio: List[PortfolioElement]):
     _show_header('PORTFOLIO')
-    for ticker, qty in portfolio:
-        print(f'{ticker}\tx\t{qty}')
+    for elem in portfolio:
+        print(f'{elem.ticker}\tx\t{elem.quantity}')
     print('\n\n')
 
 
@@ -234,8 +232,9 @@ def main():
     fees_report = prepare_fees_report(fees, cbrates_df) if fees else None
     interests_report = prepare_interests_report(interests, cbrates_df) if interests else None
 
-    finished_trades = analyze_trades_fifo(trades)
-    portfolio = analyze_portfolio(trades)
+    analyzer = TradesAnalyzer(trades)
+    finished_trades = analyzer.finished_trades
+    portfolio = analyzer.final_portfolio
 
     trades_report = prepare_trades_report(finished_trades, cbrates_df) if finished_trades else None
 
