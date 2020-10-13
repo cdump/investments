@@ -28,6 +28,7 @@ class ExchangeRatesRUB:
             return
 
         r = requests.get(f'http://www.cbr.ru/scripts/XML_dynamic.asp?date_req1=01/01/{year_from}&date_req2=01/01/2030&VAL_NM_RQ={currency_code}')
+
         tree = ET.fromstring(r.text)
 
         rates_data: List[Tuple[datetime.date, Money]] = []
@@ -41,7 +42,7 @@ class ExchangeRatesRUB:
         df = pandas.DataFrame(rates_data, columns=['date', 'rate'])
         df.set_index(['date'], inplace=True)
         # df = df.reindex(pandas.date_range(df.index.min(), df.index.max()))
-        today = datetime.datetime.utcnow().date()
+        today = datetime.datetime.utcnow().date() + datetime.timedelta(days=1)
         df = df.reindex(pandas.date_range(df.index.min(), today))
         df['rate'].fillna(method='pad', inplace=True)
 
@@ -52,5 +53,10 @@ class ExchangeRatesRUB:
     def dataframe(self) -> pandas.DataFrame:
         return self._df
 
-    def get_rate(self, date: datetime.date) -> Money:
-        return self._df.loc[date].item()
+    def get_rate(self, dt: datetime.date) -> Money:
+        if isinstance(dt, datetime.date):
+            dt = datetime.datetime.combine(dt, datetime.datetime.min.time())
+        if isinstance(dt, datetime.datetime):
+            dt = datetime.datetime.combine(dt.date(), datetime.datetime.min.time())
+        return self._df.loc[dt].item()
+

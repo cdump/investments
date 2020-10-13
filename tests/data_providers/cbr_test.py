@@ -29,3 +29,14 @@ def test_exchange_rates_rub(trade_date: datetime, currency: Currency, expect_rat
 
     rate = p.get_rate(trade_date)
     assert rate == expect_rate, f'{trade_date}: {rate} != {expect_rate}'
+
+
+def test_get_today_rate():
+    try:
+        p = ExchangeRatesRUB(currency=Currency.USD, year_from=2020, cache_dir=None)
+    except ConnectionError as ex:
+        pytest.skip(f'connection error: {ex}')
+        return
+
+    rate = p.get_rate(datetime.now().date())
+    assert rate.currency == Currency.RUB
