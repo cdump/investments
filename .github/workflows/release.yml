@@ -35,6 +35,11 @@ jobs:
         poetry build
         echo ::set-output name=wheel_name::investments-${GITHUB_REF#refs/tags/}-py3-none-any.whl
 
+    - name: Generate Release Notes
+      run: |
+        echo '## Changes since previous release:' > changelog.md
+        git log --oneline $(git describe --tags --abbrev=0 HEAD^)..HEAD --pretty=format:"- [%h](https://github.com/cdump/investments/commit/%H) %s" >> changelog.md
+
     - name: Create Release
       id: create_release
       uses: actions/create-release@latest
@@ -45,6 +50,7 @@ jobs:
           release_name: Release ${{ github.ref }}
           draft: false
           prerelease: false
+          body_path: changelog.md
 
     - name: Upload Release Asset
       id: upload-release-asset
