@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 import pytest
 
 from investments.currency import Currency
@@ -88,17 +86,3 @@ def test_money_float():
 
     msum = m + m + m
     assert msum.amount == m_expect.amount
-
-
-def test_convert_to():
-    usdrub_rate = Money(78.17, Currency.RUB)
-
-    test_usd = Money(10.98, Currency.USD)
-    res = test_usd.convert_to(usdrub_rate)
-    assert res.amount == Decimal('858.3066')
-    assert res.currency == Currency.RUB
-
-    test_rub = Money(Decimal('858.3066'), Currency.RUB)
-    res = test_rub.convert_to(usdrub_rate)
-    assert res.amount == Decimal('858.3066')
-    assert res.currency == Currency.RUB

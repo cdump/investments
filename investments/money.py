@@ -17,11 +17,6 @@ class Money:
     def amount(self) -> Decimal:
         return self._amount
 
-    def convert_to(self, rate: 'Money') -> 'Money':
-        if self.currency == rate.currency:
-            return Money(self.amount, self.currency)
-        return Money(self.amount * rate.amount, rate.currency)
-
     def round(self, digits=0) -> 'Money':  # noqa: WPS125
         return Money(round(self._amount, digits), self._currency)
 
