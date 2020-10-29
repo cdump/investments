@@ -17,7 +17,6 @@ from investments.trades_fifo import TradesAnalyzer, FinishedTrade, PortfolioElem
 
 
 def prepare_trades_report(finished_trades: List[FinishedTrade], cbr_client_usd: cbr.ExchangeRatesRUB, verbose: bool) -> pandas.DataFrame:
-    # todo unittest for
     trade_date_column = 'trade_date'
     tax_date_column = 'settle_date'
 
@@ -126,6 +125,27 @@ def _show_dividends_report(dividends: pandas.DataFrame, year: int):
     print('\n\n')
 
 
+def _show_trades_report(trades: pandas.DataFrame, year: int):
+    trades_year = trades[trades['tax_year'] == year].drop(columns=['tax_year'])
+    trades_year['N'] -= trades_year['N'].iloc[0] - 1
+
+    _show_header('TRADES')
+    print(trades_year.set_index(['N', 'ticker', 'trade_date']).to_string())
+    print('\n\n')
+
+    _show_header('TRADES RESULTS BEFORE TAXES')
+    tp = trades_year.groupby(lambda idx: (
+        trades_year.loc[idx, 'ticker'].kind,
+        'expenses' if trades_year.loc[idx, 'quantity'] > 0 else 'income',
+    ))['total_rub'].sum().reset_index()
+    tp = tp['index'].apply(pandas.Series).join(tp).pivot(index=0, columns=1, values='total_rub')
+    tp.index.name = ''
+    tp.columns.name = ''
+    tp['profit'] = tp['income'] + tp['expenses']
+    print(tp.reset_index().to_string())
+    print('\n\n')
+
+
 def show_portfolio_report(portfolio: List[PortfolioElement]):
     _show_header('PORTFOLIO')
     for elem in portfolio:
@@ -150,24 +170,7 @@ def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.D
             _show_dividends_report(dividends, year)
 
         if trades is not None:
-            trades_year = trades[trades['tax_year'] == year].drop(columns=['tax_year'])
-            trades_year['N'] -= trades_year['N'].iloc[0] - 1
-
-            _show_header('TRADES')
-            print(trades_year.set_index(['N', 'ticker', 'trade_date']).to_string())
-            print('\n\n')
-
-            _show_header('TRADES RESULTS BEFORE TAXES')
-            tp = trades_year.groupby(lambda idx: (
-                trades_year.loc[idx, 'ticker'].kind,
-                'expenses' if trades_year.loc[idx, 'quantity'] > 0 else 'income',
-            ))['total_rub'].sum().reset_index()
-            tp = tp['index'].apply(pandas.Series).join(tp).pivot(index=0, columns=1, values='total_rub')
-            tp.index.name = ''
-            tp.columns.name = ''
-            tp['profit'] = tp['income'] + tp['expenses']
-            print(tp.reset_index().to_string())
-            print('\n\n')
+            _show_trades_report(trades, year)
 
         if fees is not None:
             _show_fees_report(fees, year)
@@ -256,7 +259,4 @@ def main():
 
 
 if __name__ == '__main__':
-    # cdir = os.path.dirname(os.path.abspath(__file__))
-    # bdir = os.path.join(cdir, '../../')
-    # sys.path.insert(0, os.path.normpath(bdir))
     main()
