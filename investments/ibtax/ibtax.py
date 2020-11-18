@@ -17,6 +17,7 @@ from investments.trades_fifo import TradesAnalyzer, FinishedTrade, PortfolioElem
 
 
 def prepare_trades_report(finished_trades: List[FinishedTrade], cbr_client_usd: cbr.ExchangeRatesRUB, verbose: bool) -> pandas.DataFrame:
+    fee_round_digits = 4
     trade_date_column = 'trade_date'
     tax_date_column = 'settle_date'
 
@@ -29,10 +30,10 @@ def prepare_trades_report(finished_trades: List[FinishedTrade], cbr_client_usd: 
     df = df.join(tax_years, how='left', on='N')
 
     df['price_rub'] = df.apply(lambda x: cbr_client_usd.convert_to_rub(x['price'], x[tax_date_column]).round(digits=2), axis=1)
-    df['fee_per_piece_rub'] = df.apply(lambda x: cbr_client_usd.convert_to_rub(x['fee_per_piece'], x[trade_date_column]).round(digits=2), axis=1)
+    df['fee_per_piece_rub'] = df.apply(lambda x: cbr_client_usd.convert_to_rub(x['fee_per_piece'], x[trade_date_column]).round(digits=fee_round_digits), axis=1)
 
-    df['fee_per_piece'] = df.apply(lambda x: x['fee_per_piece'].round(digits=2), axis=1)
-    df['fee'] = df.apply(lambda x: (x['fee_per_piece'] * abs(x['quantity'])).round(digits=2), axis=1)
+    df['fee_per_piece'] = df.apply(lambda x: x['fee_per_piece'].round(digits=fee_round_digits), axis=1)
+    df['fee'] = df.apply(lambda x: (x['fee_per_piece'] * abs(x['quantity'])).round(digits=fee_round_digits), axis=1)
 
     df['total'] = df.apply(lambda x: compute_total_cost(x['quantity'], x['price'], x['fee_per_piece']).round(digits=2), axis=1)
     df['total_rub'] = df.apply(lambda x: compute_total_cost(x['quantity'], x['price_rub'], x['fee_per_piece_rub']).round(digits=2), axis=1)
