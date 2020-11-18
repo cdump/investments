@@ -21,7 +21,7 @@ def prepare_trades_report(finished_trades: List[FinishedTrade], cbr_client_usd: 
     trade_date_column = 'trade_date'
     tax_date_column = 'settle_date'
 
-    df = pandas.DataFrame(finished_trades, columns=finished_trades[0]._fields)  # noqa: WPS437
+    df = pandas.DataFrame(finished_trades, columns=finished_trades[0].fields)
 
     df[trade_date_column] = df[trade_date_column].dt.normalize()
     df[tax_date_column] = pandas.to_datetime(df[tax_date_column])

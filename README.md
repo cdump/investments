@@ -22,8 +22,7 @@ $ pip install investments --upgrade --user
 - пока **НЕ** поддерживаются сделки Forex, сделка пропускается и выводится сообщение о том, что это может повлиять на итоговый отчет
 
 *Пример отчета:*
-TODO UPDATE example
-![ibtax report example](./images/ibtax_2016.jpg)
+![ibtax report example](./images/ibtax_2020.jpg)
 
 
 ### Запуск

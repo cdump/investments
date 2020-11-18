@@ -18,14 +18,18 @@ class FinishedTrade(NamedTuple):
     # дата поставки, нужна для расчёта цены сделки в рублях на дату
     settle_date: datetime.date
 
-    # количество бумаг, "+/-"
+    # количество бумаг, положительное для операции покупки, отрицательное для операции продажи
     quantity: int
 
-    # цена одной бумаги, "+"
+    # цена одной бумаги, всегда положительная
     price: Money
 
-    # комиссия за сделку с одной бумагой, "-"
+    # комиссия за сделку с одной бумагой, всегда отрицательная
     fee_per_piece: Money
+
+    @property
+    def fields(self) -> Tuple[str, ...]:
+        return self._fields
 
 
 class PortfolioElement(NamedTuple):

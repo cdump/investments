@@ -66,17 +66,11 @@ class ExchangeRatesRUB:
     def dataframe(self) -> pandas.DataFrame:
         return self._df
 
-    def get_rate(self, dt: datetime.date) -> Money:
-        if isinstance(dt, datetime.datetime):
-            dt = datetime.datetime.combine(dt.date(), datetime.datetime.min.time())
-
-        if isinstance(dt, datetime.date):
-            dt = datetime.datetime.combine(dt, datetime.datetime.min.time())
-
+    def get_rate(self, dt: datetime.datetime) -> Money:
         return self._df.loc[dt].item()
 
-    def convert_to_rub(self, source: Money, rate_date: datetime.date) -> Money:
-        assert isinstance(rate_date, datetime.date)
+    def convert_to_rub(self, source: Money, rate_date: datetime.datetime) -> Money:
+        assert isinstance(rate_date, datetime.datetime)
 
         if source.currency == Currency.RUB:
             return Money(source.amount, Currency.RUB)
