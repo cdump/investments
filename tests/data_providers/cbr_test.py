@@ -5,7 +5,7 @@ import pytest  # type: ignore
 from requests.exceptions import ConnectionError
 
 from investments.currency import Currency
-from investments.data_providers.cbr import ExchangeRatesRUB
+from investments.data_providers.currency_rates.cbr import ExchangeRates
 from investments.money import Money
 
 test_cases = [
@@ -26,7 +26,7 @@ test_cases = [
 @pytest.mark.parametrize('trade_date,currency,expect_rate', test_cases)
 def test_exchange_rates_rub(trade_date: datetime, currency: Currency, expect_rate: Money):
     try:
-        p = ExchangeRatesRUB(currency=currency, year_from=2015, cache_dir=None)
+        p = ExchangeRates(from_currency=currency, year_from=2015, cache_dir=None)
     except ConnectionError as ex:
         pytest.skip(f'connection error: {ex}')
         return
@@ -36,19 +36,19 @@ def test_exchange_rates_rub(trade_date: datetime, currency: Currency, expect_rat
 
 
 def test_convert_to_rub():
-    client_usd = ExchangeRatesRUB(Currency.USD)
+    client_usd = ExchangeRates(Currency.USD)
     rate_date = datetime(2020, 3, 31)
     expected_rate = client_usd.get_rate(rate_date)
     assert expected_rate.amount == Decimal('77.7325')
 
     test_usd = Money(10.98, Currency.USD)
-    res = client_usd.convert_to_rub(test_usd, rate_date)
+    res = client_usd.convert_to_base_currency(test_usd, rate_date)
 
     assert res.amount == Decimal('853.50285')
     assert res.currency == Currency.RUB
 
     test_rub = Money(Decimal('858.3066'), Currency.RUB)
-    res = client_usd.convert_to_rub(test_rub, rate_date)
+    res = client_usd.convert_to_base_currency(test_rub, rate_date)
 
     assert res.amount == Decimal('858.3066')
     assert res.currency == Currency.RUB
@@ -56,5 +56,5 @@ def test_convert_to_rub():
 
 def test_unknown_currency():
     with pytest.raises(NotImplementedError) as ex:
-        ExchangeRatesRUB(currency=20, year_from=2015, cache_dir=None)
+        ExchangeRates(from_currency=20, year_from=2015, cache_dir=None)
     assert 'only USD and EUR currencies supported' in str(ex.value)

@@ -1,7 +1,7 @@
 import datetime
 
 from investments.currency import Currency
-from investments.data_providers.cbr import ExchangeRatesRUB
+from investments.data_providers.currency_rates.cbr import ExchangeRates
 from investments.ibtax.ibtax import prepare_trades_report
 from investments.money import Money
 from investments.ticker import Ticker, TickerKind
@@ -27,7 +27,7 @@ def test_simple_trades():
         FinishedTrade(N=2, ticker=ticker, trade_date=datetime.datetime(2020, 2, 10, 0, 0), settle_date=datetime.datetime(2020, 2, 12, 0, 0), quantity=-10,
                       price=Money(81.82, Currency.USD), fee_per_piece=Money('-0.101812674', Currency.USD)),
     ]
-    cbr_client = ExchangeRatesRUB(Currency.USD)
+    cbr_client = ExchangeRates(Currency.USD)
 
     res: dict = prepare_trades_report(trades, cbr_client, False).to_dict()
 

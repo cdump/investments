@@ -9,7 +9,7 @@ import pandas  # type: ignore
 from investments.calculators import compute_total_cost
 from investments.country import Country
 from investments.currency import Currency
-from investments.data_providers import cbr
+from investments.data_providers.currency_rates import cbr, cbn, ExchangeRateClient
 from investments.dividend import Dividend
 from investments.fees import Fee
 from investments.interests import Interest
@@ -18,7 +18,7 @@ from investments.report_parsers.ib import InteractiveBrokersReportParser
 from investments.trades_fifo import TradesAnalyzer, FinishedTrade, PortfolioElement  # noqa: I001
 
 
-def prepare_trades_report(finished_trades: List[FinishedTrade], cbr_client_usd: cbr.ExchangeRatesRUB, verbose: bool) -> pandas.DataFrame:
+def prepare_trades_report(finished_trades: List[FinishedTrade], rate_client_usd: ExchangeRateClient, verbose: bool) -> pandas.DataFrame:
     fee_round_digits = 4
     trade_date_column = 'trade_date'
     tax_date_column = 'settle_date'
@@ -31,8 +31,8 @@ def prepare_trades_report(finished_trades: List[FinishedTrade], cbr_client_usd: 
     tax_years = df.groupby('N')[tax_date_column].max().map(lambda x: x.year).rename('tax_year')
     df = df.join(tax_years, how='left', on='N')
 
-    df['price_rub'] = df.apply(lambda x: cbr_client_usd.convert_to_rub(x['price'], x[tax_date_column]).round(digits=2), axis=1)
-    df['fee_per_piece_rub'] = df.apply(lambda x: cbr_client_usd.convert_to_rub(x['fee_per_piece'], x[trade_date_column]).round(digits=fee_round_digits), axis=1)
+    df['price_rub'] = df.apply(lambda x: rate_client_usd.convert_to_base_currency(x['price'], x[tax_date_column]).round(digits=2), axis=1)
+    df['fee_per_piece_rub'] = df.apply(lambda x: rate_client_usd.convert_to_base_currency(x['fee_per_piece'], x[trade_date_column]).round(digits=fee_round_digits), axis=1)
 
     df['fee_per_piece'] = df.apply(lambda x: x['fee_per_piece'].round(digits=fee_round_digits), axis=1)
     df['fee'] = df.apply(lambda x: (x['fee_per_piece'] * abs(x['quantity'])).round(digits=fee_round_digits), axis=1)
@@ -40,8 +40,8 @@ def prepare_trades_report(finished_trades: List[FinishedTrade], cbr_client_usd: 
     df['total'] = df.apply(lambda x: compute_total_cost(x['quantity'], x['price'], x['fee_per_piece']).round(digits=2), axis=1)
     df['total_rub'] = df.apply(lambda x: compute_total_cost(x['quantity'], x['price_rub'], x['fee_per_piece_rub']).round(digits=2), axis=1)
 
-    df = df.join(cbr_client_usd.dataframe['rate'].rename('settle_rate'), how='left', on=tax_date_column)
-    df = df.join(cbr_client_usd.dataframe['rate'].rename('fee_rate'), how='left', on=trade_date_column)
+    df['settle_rate'] = df.apply(lambda x: rate_client_usd.get_rate(x[tax_date_column]), axis=1)
+    df['fee_rate'] = df.apply(lambda x: rate_client_usd.get_rate(x[trade_date_column]), axis=1)
     df['profit_rub'] = df['total_rub']
 
     profit = df.groupby('N')['profit_rub'].sum().reset_index().set_index('N')
@@ -55,7 +55,7 @@ def prepare_trades_report(finished_trades: List[FinishedTrade], cbr_client_usd: 
     return df
 
 
-def prepare_dividends_report(dividends: List[Dividend], cbr_client_usd: cbr.ExchangeRatesRUB, verbose: bool) -> pandas.DataFrame:
+def prepare_dividends_report(dividends: List[Dividend], rate_client_usd: ExchangeRateClient, verbose: bool) -> pandas.DataFrame:
     operation_date_column = 'date'
     if not verbose:
         dividends = [x for x in dividends if x.amount.amount != 0 or x.tax.amount != 0]  # remove reversed dividends
@@ -65,10 +65,10 @@ def prepare_dividends_report(dividends: List[Dividend], cbr_client_usd: cbr.Exch
 
     df['tax_year'] = df[operation_date_column].map(lambda x: x.year)
 
-    df = df.join(cbr_client_usd.dataframe, how='left', on=operation_date_column)
+    df['rate'] = df.apply(lambda x: rate_client_usd.get_rate(x[operation_date_column]), axis=1)
 
-    df['amount_rub'] = df.apply(lambda x: cbr_client_usd.convert_to_rub(x['amount'], x[operation_date_column]).round(digits=2), axis=1)
-    df['tax_paid_rub'] = df.apply(lambda x: cbr_client_usd.convert_to_rub(x['tax_paid'], x[operation_date_column]).round(digits=2), axis=1)
+    df['amount_rub'] = df.apply(lambda x: rate_client_usd.convert_to_base_currency(x['amount'], x[operation_date_column]).round(digits=2), axis=1)
+    df['tax_paid_rub'] = df.apply(lambda x: rate_client_usd.convert_to_base_currency(x['tax_paid'], x[operation_date_column]).round(digits=2), axis=1)
 
     if verbose:
         df['tax_rate'] = df.apply(lambda x: round(x['tax_paid'].amount * 100 / x['amount'].amount, 2), axis=1)
@@ -76,28 +76,28 @@ def prepare_dividends_report(dividends: List[Dividend], cbr_client_usd: cbr.Exch
     return df
 
 
-def prepare_fees_report(fees: List[Fee], cbr_client_usd: cbr.ExchangeRatesRUB) -> pandas.DataFrame:
+def prepare_fees_report(fees: List[Fee], rate_client_usd: ExchangeRateClient) -> pandas.DataFrame:
     operation_date_column = 'date'
     df_data = [
         (i + 1, pandas.to_datetime(x.date), x.amount, x.description, x.date.year)
         for i, x in enumerate(fees)
     ]
     df = pandas.DataFrame(df_data, columns=['N', operation_date_column, 'amount', 'description', 'tax_year'])
-    df = df.join(cbr_client_usd.dataframe, how='left', on=operation_date_column)
+    df['rate'] = df.apply(lambda x: rate_client_usd.get_rate(x[operation_date_column]), axis=1)
 
-    df['amount_rub'] = df.apply(lambda x: cbr_client_usd.convert_to_rub(x['amount'], x[operation_date_column]).round(digits=2), axis=1)
+    df['amount_rub'] = df.apply(lambda x: rate_client_usd.convert_to_base_currency(x['amount'], x[operation_date_column]).round(digits=2), axis=1)
     return df
 
 
-def prepare_interests_report(interests: List[Interest], cbr_client_usd: cbr.ExchangeRatesRUB) -> pandas.DataFrame:
+def prepare_interests_report(interests: List[Interest], rate_client_usd: ExchangeRateClient) -> pandas.DataFrame:
     operation_date_column = 'date'
     df_data = [
         (i + 1, pandas.to_datetime(x.date), x.amount, x.description, x.date.year)
         for i, x in enumerate(interests)
     ]
     df = pandas.DataFrame(df_data, columns=['N', operation_date_column, 'amount', 'description', 'tax_year'])
-    df = df.join(cbr_client_usd.dataframe, how='left', on=operation_date_column)
-    df['amount_rub'] = df.apply(lambda x: cbr_client_usd.convert_to_rub(x['amount'], x[operation_date_column]).round(digits=2), axis=1)
+    df['rate'] = df.apply(lambda x: rate_client_usd.get_rate(x[operation_date_column]), axis=1)
+    df['amount_rub'] = df.apply(lambda x: rate_client_usd.convert_to_base_currency(x['amount'], x[operation_date_column]).round(digits=2), axis=1)
     return df
 
 
@@ -249,17 +249,23 @@ def main():
         operation_years.append(trades[0].trade_date.year)
     if interests:
         operation_years.append(interests[0].date.year)
-    cbr_client_usd = cbr.ExchangeRatesRUB(currency=Currency.USD, year_from=min(operation_years), cache_dir=args.cache_dir)
 
-    dividends_report = prepare_dividends_report(dividends, cbr_client_usd, args.verbose) if dividends else None
-    fees_report = prepare_fees_report(fees, cbr_client_usd) if fees else None
-    interests_report = prepare_interests_report(interests, cbr_client_usd) if interests else None
+    if args.country == Country.RUSSIA:
+        currency_rate_client = cbr.ExchangeRates(from_currency=Currency.USD, year_from=min(operation_years), cache_dir=args.cache_dir)
+    elif args.country == Country.CZECH:
+        currency_rate_client = cbn.ExchangeRates(from_currency=Currency.USD, year_from=min(operation_years), cache_dir=args.cache_dir)
+    else:
+        raise NotImplementedError(f'Country {args.country} not implemented')
+
+    dividends_report = prepare_dividends_report(dividends, currency_rate_client, args.verbose) if dividends else None
+    fees_report = prepare_fees_report(fees, currency_rate_client) if fees else None
+    interests_report = prepare_interests_report(interests, currency_rate_client) if interests else None
 
     analyzer = TradesAnalyzer(trades)
     finished_trades = analyzer.finished_trades
     portfolio = analyzer.final_portfolio
 
-    trades_report = prepare_trades_report(finished_trades, cbr_client_usd, args.verbose) if finished_trades else None
+    trades_report = prepare_trades_report(finished_trades, currency_rate_client, args.verbose) if finished_trades else None
 
     show_report(trades_report, dividends_report, fees_report, interests_report, args.years)
     show_portfolio_report(portfolio)

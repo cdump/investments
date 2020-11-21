@@ -15,19 +15,22 @@ import requests
 
 from investments.currency import Currency
 from investments.data_providers.cache import DataFrameCache
+from investments.data_providers.currency_rates import ExchangeRateClient
 from investments.money import Money
 
 
-class ExchangeRatesRUB:
+class ExchangeRates(ExchangeRateClient):
     currency_codes = {
         Currency.USD: 'R01235',
         Currency.EUR: 'R01239',
     }
     currency: Currency
+
     _df: pandas.DataFrame
 
-    def __init__(self, currency: Currency, year_from: int = 2000, cache_dir: str = None):
-        self.currency = currency
+    def __init__(self, from_currency: Currency, year_from: int = 2000, cache_dir: str = None):
+        super().__init__()
+        self.currency = from_currency
 
         currency_code = self.currency_codes.get(self.currency)
         if not currency_code:
@@ -62,10 +65,6 @@ class ExchangeRatesRUB:
         cache.put(df)
         self._df = df
 
-    @property
-    def dataframe(self) -> pandas.DataFrame:
-        return self._df
-
     def get_rate(self, dt: datetime.date) -> Money:
         if isinstance(dt, datetime.datetime):
             dt = datetime.datetime.combine(dt.date(), datetime.datetime.min.time())
@@ -75,7 +74,7 @@ class ExchangeRatesRUB:
 
         return self._df.loc[dt].item()
 
-    def convert_to_rub(self, source: Money, rate_date: datetime.date) -> Money:
+    def convert_to_base_currency(self, source: Money, rate_date: datetime.date) -> Money:
         assert isinstance(rate_date, datetime.date)
 
         if source.currency == Currency.RUB:
