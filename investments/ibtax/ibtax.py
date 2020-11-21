@@ -6,6 +6,7 @@ from typing import List, Optional
 import pandas  # type: ignore
 
 from investments.calculators import compute_total_cost
+from investments.country import Country
 from investments.currency import Currency
 from investments.data_providers import cbr
 from investments.dividend import Dividend
@@ -220,6 +221,7 @@ def main():
     parser.add_argument('--confirmation-reports-dir', type=str, required=True, help='directory with InteractiveBrokers .csv confirmation reports')
     parser.add_argument('--cache-dir', type=str, default='.', help='directory for caching (CBR RUB exchange rates)')
     parser.add_argument('--years', type=lambda x: [int(v.strip()) for v in x.split(',')], default=[], help='comma separated years for final report, omit for all')
+    parser.add_argument('--country', type=Country, default=Country.RUSSIA, choices=Country, help='base country for tax compute')
     parser.add_argument('--verbose', nargs='?', default=False, const=True, help='do not "prune" reversed dividends, show dividens tax percent, etc.')
     args = parser.parse_args()
 
@@ -229,6 +231,8 @@ def main():
 
     if args.verbose:
         logging.basicConfig(level=logging.INFO)
+
+    logging.info('Country: %s', args.country)
 
     parser_object = parse_reports(args.activity_reports_dir, args.confirmation_reports_dir)
 

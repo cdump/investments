@@ -5,6 +5,7 @@ class Currency(Enum):
     USD = 1
     RUB = 2
     EUR = 3
+    CZK = 4
 
     @staticmethod
     def parse(strval: str):
@@ -13,6 +14,8 @@ class Currency(Enum):
         if strval in {'₽', 'RUB'}:
             return Currency.RUB
         if strval in {'€', 'EUR'}:
+            return Currency.EUR
+        if strval in {'Kč', 'CZK'}:
             return Currency.EUR
         raise ValueError(strval)
 
@@ -23,4 +26,6 @@ class Currency(Enum):
             return '₽'
         elif self == Currency.EUR:
             return '€'
-        return self.__repr__(self)
+        elif self == Currency.CZK:
+            return 'Kč'
+        return self.__repr__()
