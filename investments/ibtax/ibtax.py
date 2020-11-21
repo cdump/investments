@@ -1,4 +1,5 @@
 import argparse
+import datetime
 import logging
 import os
 from typing import List, Optional
@@ -241,13 +242,14 @@ def main():
     fees = parser_object.fees
     interests = parser_object.interests
 
-    if not trades:
-        logging.warning('no trades found')
-        return
-
-    # fixme first_year without dividends
-    first_year = min(trades[0].trade_date.year, dividends[0].date.year) if dividends else trades[0].trade_date.year
-    cbr_client_usd = cbr.ExchangeRatesRUB(currency=Currency.USD, year_from=first_year, cache_dir=args.cache_dir)
+    operation_years = [datetime.datetime.utcnow().year]
+    if dividends:
+        operation_years.append(dividends[0].date.year)
+    if trades:
+        operation_years.append(trades[0].trade_date.year)
+    if interests:
+        operation_years.append(interests[0].date.year)
+    cbr_client_usd = cbr.ExchangeRatesRUB(currency=Currency.USD, year_from=min(operation_years), cache_dir=args.cache_dir)
 
     dividends_report = prepare_dividends_report(dividends, cbr_client_usd, args.verbose) if dividends else None
     fees_report = prepare_fees_report(fees, cbr_client_usd) if fees else None
