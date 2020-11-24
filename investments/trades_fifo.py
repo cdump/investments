@@ -2,6 +2,7 @@ import datetime
 from collections import defaultdict
 from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Tuple
 
+from investments.calculators import compute_total_cost
 from investments.money import Money
 from investments.ticker import Ticker
 from investments.trade import Trade
@@ -10,12 +11,25 @@ from investments.trade import Trade
 class FinishedTrade(NamedTuple):
     N: int
     ticker: Ticker
-    datetime: datetime.datetime
+
+    # дата сделки, нужна для расчёта комиссии в рублях на дату
+    trade_date: datetime.datetime
+
+    # дата поставки, нужна для расчёта цены сделки в рублях на дату
     settle_date: datetime.date
+
+    # количество бумаг, положительное для операции покупки, отрицательное для операции продажи
     quantity: int
+
+    # цена одной бумаги, всегда положительная
     price: Money
-    total: Money
-    profit: Money
+
+    # комиссия за сделку с одной бумагой, всегда отрицательная
+    fee_per_piece: Money
+
+    @property
+    def fields(self) -> Tuple[str, ...]:
+        return self._fields
 
 
 class PortfolioElement(NamedTuple):
@@ -24,12 +38,9 @@ class PortfolioElement(NamedTuple):
 
 
 class TradesAnalyzer:
-    _finished_trades: List[FinishedTrade]
-    _portfolio: List[PortfolioElement]
-
     def __init__(self, trades: Iterable[Trade]):
-        self._finished_trades = []
-        self._portfolio = []
+        self._finished_trades: List[FinishedTrade] = []
+        self._portfolio: List[PortfolioElement] = []
         self.analyze_trades(trades)
 
     def analyze_trades(self, trades: Iterable[Trade]):
@@ -49,36 +60,34 @@ class TradesAnalyzer:
                     break
                 assert q != 0
 
-                self._finished_trades.append(FinishedTrade(
-                    finished_trade_id,
-                    trade.ticker,
-                    matched_trade.datetime,
-                    matched_trade.settle_date,
-                    q,
-                    matched_trade.price,
-                    abs(q) * matched_trade.price,
-                    Money(0, trade.price.currency),
-                ))
+                total_cost = compute_total_cost(q, matched_trade.price, matched_trade.fee_per_piece)
 
-                profit = q * (trade.price - matched_trade.price)
+                finished_trade = FinishedTrade(
+                    finished_trade_id, trade.ticker, matched_trade.trade_date, matched_trade.settle_date, q,
+                    matched_trade.price, matched_trade.fee_per_piece,
+                )
+                self._finished_trades.append(finished_trade)
+
+                q = -1 * q
+
+                profit = compute_total_cost(q, trade.price, trade.fee_per_piece) + total_cost
                 if total_profit is None:
                     total_profit = profit
                 else:
                     total_profit += profit
 
-                quantity -= -1 * q
+                quantity -= q
 
             if total_profit is not None:
                 q = trade.quantity - quantity
                 self._finished_trades.append(FinishedTrade(
                     finished_trade_id,
                     trade.ticker,
-                    trade.datetime,
+                    trade.trade_date,
                     trade.settle_date,
                     q,
                     trade.price,
-                    abs(q) * trade.price,
-                    total_profit,
+                    trade.fee_per_piece,
                 ))
                 finished_trade_id += 1
 
@@ -96,14 +105,14 @@ class TradesAnalyzer:
         return self._portfolio
 
 
-def sign(v: int) -> int:
-    assert v != 0
-    return -1 if v < 0 else 1
-
-
 class _TradesFIFO:
     def __init__(self):
         self._portfolio = defaultdict(list)
+
+    @staticmethod
+    def sign(v: int) -> int:
+        assert v != 0
+        return -1 if v < 0 else 1
 
     def put(self, quantity: int, trade: Trade):
         """
@@ -113,10 +122,10 @@ class _TradesFIFO:
             quantity (int): The real quantity of the trade, >0 for BUY trades & <0 for SELL trades
             trade (Trade): Base trade, quantity field not used
         """
-        assert sign(quantity) == sign(trade.quantity)
+        assert self.sign(quantity) == self.sign(trade.quantity)
         assert abs(quantity) <= abs(trade.quantity)
         if self._portfolio[trade.ticker]:
-            assert sign(quantity) == sign(self._portfolio[trade.ticker][0]['quantity'])
+            assert self.sign(quantity) == self.sign(self._portfolio[trade.ticker][0]['quantity'])
 
         self._portfolio[trade.ticker].append({
             'trade': trade,
@@ -139,10 +148,10 @@ class _TradesFIFO:
             return None, 0
 
         front = self._portfolio[ticker][0]
-        fqsign = sign(front['quantity'])
+        fqsign = self.sign(front['quantity'])
 
         # only match BUY with SELL and vice versa
-        if sign(quantity) == fqsign:
+        if self.sign(quantity) == fqsign:
             return None, 0
 
         q = fqsign * min(abs(quantity), abs(front['quantity']))

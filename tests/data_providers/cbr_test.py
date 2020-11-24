@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 from decimal import Decimal
 
 import pytest  # type: ignore
@@ -8,13 +8,13 @@ from investments.currency import Currency
 from investments.data_providers.cbr import ExchangeRatesRUB
 from investments.money import Money
 
-
 test_cases = [
     (datetime(2015, 1, 15), Currency.USD, Money('66.0983', Currency.RUB)),
     (datetime(2015, 3, 7), Currency.USD, Money('59.9938', Currency.RUB)),
     (datetime(2015, 3, 8), Currency.USD, Money('59.9938', Currency.RUB)),
     (datetime(2020, 3, 31), Currency.USD, Money('77.7325', Currency.RUB)),
     (datetime(2020, 1, 9), Currency.USD, Money('61.9057', Currency.RUB)),
+    (datetime(2020, 2, 4), Currency.EUR, Money('70.7921', Currency.RUB)),
 
     (datetime(2015, 3, 7), Currency.EUR, Money('66.1012', Currency.RUB)),
     (datetime(2015, 1, 15), Currency.EUR, Money('77.9629', Currency.RUB)),

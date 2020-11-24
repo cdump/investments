@@ -35,6 +35,9 @@ ignore =
     D104, # Missing docstring in public package
     D105, # Missing docstring in magic method
     D107, # Missing docstring in __init__
+    DAR101, # Missing parameter(s) in Docstring
+    DAR201, # Missing "Returns" in Docstring
+
     E800, # commented out code
     N814, # camelcase imported as constant
     WPS115, # upper-case constant in a class

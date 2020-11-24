@@ -98,7 +98,7 @@ class OpenBrokerFRParser:
         self._parse_non_trade_operations(tree)
         self._parse_trades(tree)
 
-        self._trades.sort(key=lambda x: x.datetime)
+        self._trades.sort(key=lambda x: x.trade_date)
         self._dividends.sort(key=lambda x: x.date)
         self._deposits_and_withdrawals.sort(key=lambda x: x[0])
 
@@ -121,7 +121,7 @@ class OpenBrokerFRParser:
         dt = _parse_datetime(f['operation_date'])
         self._trades.append(Trade(
             ticker=ticker,
-            datetime=dt,
+            trade_date=dt,
             settle_date=dt,
             quantity=qnty,
             price=Money(0, Currency.RUB),  # TODO: other currencies
@@ -155,7 +155,7 @@ class OpenBrokerFRParser:
             isin, quantity_buyout = m.group('isin'), int(m.group('quantity'))
             self._trades.append(Trade(
                 ticker=self._tickers.get(isin=isin),
-                datetime=dt,
+                trade_date=dt,
                 settle_date=dt,
                 quantity=-1 * quantity_buyout,
                 price=money_total / quantity_buyout,
@@ -171,7 +171,7 @@ class OpenBrokerFRParser:
                 for (price, quantity_coupons) in ((Money(0, currency), 1), (money_total, -1)):
                     self._trades.append(Trade(
                         ticker=ticker,
-                        datetime=dt,
+                        trade_date=dt,
                         settle_date=dt,
                         quantity=quantity_coupons,
                         price=price,
@@ -184,7 +184,7 @@ class OpenBrokerFRParser:
                 quantity_redemption = bonds_redemption[key]
                 self._trades.append(Trade(
                     ticker=ticker,
-                    datetime=dt,
+                    trade_date=dt,
                     settle_date=dt,
                     quantity=quantity_redemption,
                     price=-1 * money_total / int(quantity_redemption),
@@ -275,7 +275,7 @@ class OpenBrokerFRParser:
 
             self._trades.append(Trade(
                 ticker=ticker,
-                datetime=_parse_datetime(f['conclusion_time']),
+                trade_date=_parse_datetime(f['conclusion_time']),
                 settle_date=_parse_datetime(f['execution_date']),
                 quantity=int(qnty),
                 price=price,
