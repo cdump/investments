@@ -21,6 +21,8 @@ def _parse_tickerkind(strval: str):
         return TickerKind.Rdr
     if strval == 'Облигации':
         return TickerKind.Bond
+    if strval == 'GDR':
+        return TickerKind.Gdr
     raise ValueError(strval)
 
 
@@ -105,6 +107,8 @@ class OpenBrokerFRParser:
     def _parse_tickers(self, xml_tree: ET.ElementTree):
         for rec in xml_tree.findall('spot_portfolio_security_params/item'):
             f = rec.attrib
+            if 'ticker' not in f and f['isin'] == 'JE00B5BCW814':
+                f['ticker'] = 'RUAL'
             self._tickers.put(
                 symbol=f['ticker'],
                 kind=_parse_tickerkind(f['security_type']),
@@ -115,7 +119,7 @@ class OpenBrokerFRParser:
 
     def _parse_cb_convertation(self, f):
         # WARNING: lost price information, do not use for tax calculation!
-        qnty = int(f['quantity'])
+        qnty = int(float(f['quantity']))
         assert float(f['quantity']) == qnty
         ticker = self._tickers.get(name=f['security_name'])
         dt = _parse_datetime(f['operation_date'])
