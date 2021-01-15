@@ -104,40 +104,49 @@ def _show_header(msg: str):
 
 
 def _show_fees_report(fees: pandas.DataFrame, year: int):
-    fees_year = fees[fees['tax_year'] == year].drop(columns=['tax_year'])
+    fees_by_year = fees[fees['tax_year'] == year].drop(columns=['tax_year'])
+    if fees_by_year.empty:
+        return
     _show_header('OTHER FEES')
-    print(fees_year.set_index(['N', 'date']).to_string())
-    print('\nTOTAL:\t', fees_year['amount_rub'].sum())
+    print(fees_by_year.set_index(['N', 'date']).to_string())
+    print('\nTOTAL:\t', fees_by_year['amount_rub'].sum())
     print('\n\n')
 
 
 def _show_interests_report(interests: pandas.DataFrame, year: int):
-    interests_year = interests[interests['tax_year'] == year].drop(columns=['tax_year'])
+    interests_by_year = interests[interests['tax_year'] == year].drop(columns=['tax_year'])
+    if interests_by_year.empty:
+        return
     _show_header('INTERESTS')
-    print(interests_year.set_index(['N', 'date']).to_string())
+    print(interests_by_year.set_index(['N', 'date']).to_string())
     print('\n\n')
 
 
 def _show_dividends_report(dividends: pandas.DataFrame, year: int):
-    dividends_year = dividends[dividends['tax_year'] == year].drop(columns=['tax_year'])
-    dividends_year['N'] -= dividends_year['N'].iloc[0] - 1
+    dividends_by_year = dividends[dividends['tax_year'] == year].drop(columns=['tax_year'])
+    if dividends_by_year.empty:
+        return
+
+    dividends_by_year['N'] -= dividends_by_year['N'].iloc[0] - 1
     _show_header('DIVIDENDS')
-    print(dividends_year.set_index(['N', 'ticker', 'date']).to_string())
+    print(dividends_by_year.set_index(['N', 'ticker', 'date']).to_string())
     print('\n\n')
 
 
 def _show_trades_report(trades: pandas.DataFrame, year: int):
-    trades_year = trades[trades['tax_year'] == year].drop(columns=['tax_year'])
-    trades_year['N'] -= trades_year['N'].iloc[0] - 1
+    trades_by_year = trades[trades['tax_year'] == year].drop(columns=['tax_year'])
+    if trades_by_year.empty:
+        return
+    trades_by_year['N'] -= trades_by_year['N'].iloc[0] - 1
 
     _show_header('TRADES')
-    print(trades_year.set_index(['N', 'ticker', 'trade_date']).to_string())
+    print(trades_by_year.set_index(['N', 'ticker', 'trade_date']).to_string())
     print('\n\n')
 
     _show_header('TRADES RESULTS BEFORE TAXES')
-    tp = trades_year.groupby(lambda idx: (
-        trades_year.loc[idx, 'ticker'].kind,
-        'expenses' if trades_year.loc[idx, 'quantity'] > 0 else 'income',
+    tp = trades_by_year.groupby(lambda idx: (
+        trades_by_year.loc[idx, 'ticker'].kind,
+        'expenses' if trades_by_year.loc[idx, 'quantity'] > 0 else 'income',
     ))['total_rub'].sum().reset_index()
     tp = tp['index'].apply(pandas.Series).join(tp).pivot(index=0, columns=1, values='total_rub')
     tp.index.name = ''
