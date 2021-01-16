@@ -2,6 +2,7 @@ import csv
 import datetime
 from decimal import Decimal
 
+from investments.cash import Cash
 from investments.currency import Currency
 from investments.fees import Fee
 from investments.interests import Interest
@@ -139,6 +140,49 @@ Interest,Data,Total Interest in USD,,,0.13844211"""
                                       description='RUB Credit Interest for Feb-2020')
     assert p.interests[1] == Interest(date=datetime.date(2020, 3, 4), amount=Money(0.09, Currency.USD),
                                       description='USD Credit Interest for Feb-2020')
+
+
+def test_parse_cash():
+    p = InteractiveBrokersReportParser()
+
+    lines = """Cash Report,Header,Currency Summary,Currency,Total,Securities,Futures,Month to Date,Year to Date,
+Cash Report,Data,Starting Cash,Base Currency Summary,0,0,0,,,
+Cash Report,Data,Commissions,Base Currency Summary,-82.64370531,-82.64370531,0,-8.62621762,-82.64370531,
+Cash Report,Data,Deposits,Base Currency Summary,65663.765,65663.765,0,1625.96,65663.765,
+Cash Report,Data,Dividends,Base Currency Summary,1045.45,1045.45,0,523.67,1045.45,
+Cash Report,Data,Broker Interest Paid and Received,Base Currency Summary,0.13844211,0.13844211,0,0,0.13844211,
+Cash Report,Data,Net Trades (Sales),Base Currency Summary,74217.07255104,74217.07255104,0,3923.70991107,74217.07255106,
+Cash Report,Data,Net Trades (Purchase),Base Currency Summary,-140090.704656633,-140090.704656633,0,-7874.79454332,-140090.70465664,
+Cash Report,Data,Other Fees,Base Currency Summary,-23.2,-23.2,0,-0.6,-23.2,
+Cash Report,Data,Withholding Tax,Base Currency Summary,-103.55,-103.55,0,-51.39,-103.55,
+Cash Report,Data,Cash FX Translation Gain/Loss,Base Currency Summary,-156.23378547,-156.23378547,0,,,
+Cash Report,Data,Ending Cash,Base Currency Summary,470.093845757,470.093845757,0,,,
+Cash Report,Data,Ending Settled Cash,Base Currency Summary,470.093845757,470.093845757,0,,,
+Cash Report,Data,Starting Cash,RUB,0,0,0,,,
+Cash Report,Data,Deposits,RUB,4495000,4495000,0,120000,4495000,
+Cash Report,Data,Broker Interest Paid and Received,RUB,3.21,3.21,0,0,3.21,
+Cash Report,Data,Net Trades (Purchase),RUB,-4495003.210000001,-4495003.210000001,0,-295619.97975,-4495003.21,
+Cash Report,Data,Ending Cash,RUB,0,0,0,,,
+Cash Report,Data,Ending Settled Cash,RUB,0,0,0,,,
+Cash Report,Data,Starting Cash,USD,0,0,0,,,
+Cash Report,Data,Commissions,USD,-82.64370531,-82.64370531,0,-8.62621762,-82.64370531,
+Cash Report,Data,Dividends,USD,1045.45,1045.45,0,523.67,1045.45,
+Cash Report,Data,Broker Interest Paid and Received,USD,0.09,0.09,0,0,0.09,
+Cash Report,Data,Net Trades (Sales),USD,74217.07255104,74217.07255104,0,3923.70991107,74217.07255106,
+Cash Report,Data,Net Trades (Purchase),USD,-74583.125,-74583.125,0,-3932.96,-74583.125,
+Cash Report,Data,Other Fees,USD,-23.2,-23.2,0,-0.6,-23.2,
+Cash Report,Data,Withholding Tax,USD,-103.55,-103.55,0,-51.39,-103.55,
+Cash Report,Data,Ending Cash,USD,470.093845757,470.093845757,0,,,
+Cash Report,Data,Ending Settled Cash,USD,470.093845757,470.093845757,0,,,"""
+
+    lines = lines.split('\n')
+    p._real_parse_activity_csv(csv.reader(lines, delimiter=','), {
+        'Cash Report': p._parse_cash_report,
+    })
+
+    assert len(p.cash) == 16
+    assert p.cash[1] == Cash(amount=Money(4495000, Currency.RUB), description='Deposits')
+    assert p.cash[15] == Cash(amount=Money(470.093845757, Currency.USD), description='Ending Settled Cash')
 
 
 def test_parse_trades_with_fees():

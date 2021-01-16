@@ -35,8 +35,14 @@ def prepare_trades_report(finished_trades: List[FinishedTrade], cbr_client_usd: 
     df['fee_per_piece'] = df.apply(lambda x: x['fee_per_piece'].round(digits=fee_round_digits), axis=1)
     df['fee'] = df.apply(lambda x: (x['fee_per_piece'] * abs(x['quantity'])).round(digits=fee_round_digits), axis=1)
 
-    df['total'] = df.apply(lambda x: compute_total_cost(x['quantity'], x['price'], x['fee_per_piece']).round(digits=2), axis=1)
-    df['total_rub'] = df.apply(lambda x: compute_total_cost(x['quantity'], x['price_rub'], x['fee_per_piece_rub']).round(digits=2), axis=1)
+    df['total'] = df.apply(
+        lambda x: compute_total_cost(x['quantity'], x['price'], x['fee_per_piece']).round(digits=2),
+        axis=1,
+    )
+    df['total_rub'] = df.apply(
+        lambda x: compute_total_cost(x['quantity'], x['price_rub'], x['fee_per_piece_rub']).round(digits=2),
+        axis=1,
+    )
 
     df = df.join(cbr_client_usd.dataframe['rate'].rename('settle_rate'), how='left', on=tax_date_column)
     df = df.join(cbr_client_usd.dataframe['rate'].rename('fee_rate'), how='left', on=trade_date_column)
@@ -69,7 +75,10 @@ def prepare_dividends_report(dividends: List[Dividend], cbr_client_usd: cbr.Exch
     df['tax_paid_rub'] = df.apply(lambda x: cbr_client_usd.convert_to_rub(x['tax_paid'], x[operation_date_column]).round(digits=2), axis=1)
 
     if verbose:
-        df['tax_rate'] = df.apply(lambda x: round(x['tax_paid'].amount * 100 / x['amount'].amount, 2), axis=1)
+        df['tax_rate'] = df.apply(
+            lambda x: round(x['tax_paid'].amount * 100 / x['amount'].amount, 2),
+            axis=1,
+        )
 
     return df
 

@@ -1,5 +1,5 @@
 # Investments
-Библиотека для анализа брокерских отчетов + утилита для подготовки налоговой отчетности
+Библиотека для анализа брокерских отчетов + утилиты для подготовки налоговой отчетности
 
 ![Tests status](https://github.com/cdump/investments/workflows/tests/badge.svg)
 
@@ -24,16 +24,31 @@ $ pip install investments --upgrade --user
 *Пример отчета:*
 ![ibtax report example](./images/ibtax_2020.jpg)
 
-
 ### Запуск
 Запустить `ibtax` указав в `--activity-reports-dir` и `--confirmation-reports-dir` директории отчетами в формате `.csv` (см. *Подготовка отчетов Interactive Brokers*)
 
 Важно, чтобы csv-отчеты `activity` и `confirmation` были в разных директориях!
 
-### Подготовка отчетов Interactive Brokers
+
+## Утилита ibdds
+Утилита для подготовки отчёта о движении денежных средств по счетам у брокера Interactive Brokers (USA) для резидентов РФ
+
+- выводит отчёт по каждой валюте счёта отдельно
+- вывод максимально приближен к форме отчёта о ДДС
+
+*Пример отчета:*
+![ibdds report example](./images/ibdds_2020.png)
+
+### Запуск
+Запустить `ibdds` указав в `--activity-report-filepath` путь до отчёта о активности по счёту в формате `.csv` (см. *Подготовка отчетов Interactive Brokers*)
+
+Важно: утилита не проверяет период отчёта `activity` и для корректной подготовки налоговой отчётности необходимо указать передать путь до отчёта за один год.
+
+
+## Подготовка отчетов Interactive Brokers
 Для работы нужно выгрузить из [личного кабинета](https://www.interactivebrokers.co.uk/sso/Login) два типа отчетов: *Activity statement* (сделки, дивиденды, информация по инструментам и т.п.) и *Trade Confirmation* (settlement date, необходимая для правильной конвертации сумм по курсу ЦБ)
 
-#### Activity statement
+### Activity statement
 Для загрузки нужно перейти в **Reports / Tax Docs** > **Default Statements** > **Activity**
 
 Выбрать `Format: CSV` и скачать данные за все доступное время (`Perioid: Annual` для прошлых лет + `Period: Year to Date` для текущего года)
@@ -42,7 +57,7 @@ $ pip install investments --upgrade --user
 
 ![Activity Statement](./images/ib_report_activity.jpg)
 
-#### Trade Confirmation
+### Trade Confirmation
 
 Для загрузки нужно перейти в **Reports / Tax Docs** > **Flex Queries** > **Trade Confirmation Flex Query** и создать новый тип отчетов, выбрав в **Sections** > **Trade Confirmation** все пункты в группе **Executions**, остальные настройки - как на скриншоте:
 
