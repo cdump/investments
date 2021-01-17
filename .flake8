@@ -19,7 +19,7 @@ max-cognitive-score = 24
 max-cognitive-average = 24
 
 # magic methods includes
-max-methods = 18
+max-methods = 20
 
 # function arguments
 max-arguments = 8

@@ -4,6 +4,7 @@ import logging
 import re
 from typing import Dict, Iterator, List, Tuple
 
+from investments.cash import Cash
 from investments.currency import Currency
 from investments.dividend import Dividend
 from investments.fees import Fee
@@ -102,6 +103,7 @@ class InteractiveBrokersReportParser:
         self._dividends = []
         self._fees: List[Fee] = []
         self._interests: List[Interest] = []
+        self._cash: List[Cash] = []
         self._deposits_and_withdrawals = []
         self._tickers = TickersStorage()
         self._settle_dates = {}
@@ -128,6 +130,10 @@ class InteractiveBrokersReportParser:
     @property
     def interests(self) -> List[Interest]:
         return self._interests
+
+    @property
+    def cash(self) -> List[Cash]:
+        return self._cash
 
     def parse_csv(self, *, activity_csvs: List[str], trade_confirmation_csvs: List[str]):
         # 1. parse tickers info
@@ -158,6 +164,7 @@ class InteractiveBrokersReportParser:
                     # 'Mark-to-Market Performance Summary',
                     # 'Net Asset Value', 'Notes/Legal Notes', 'Open Positions', 'Realized & Unrealized Performance Summary',
                     # 'Statement', '\ufeffStatement', 'Total P/L for Statement Period', 'Transaction Fees',
+                    'Cash Report': self._parse_cash_report,
                 })
 
         # 4. sort
@@ -313,3 +320,11 @@ class InteractiveBrokersReportParser:
         amount = Money(f['Amount'], currency)
         description = f['Description']
         self._interests.append(Interest(date, amount, description))
+
+    def _parse_cash_report(self, f: Dict[str, str]):
+        currency_code = f['Currency']
+        if currency_code != 'Base Currency Summary':
+            currency = Currency.parse(currency_code)
+            description = f['Currency Summary']
+            amount = Money(f['Total'], currency)
+            self._cash.append(Cash(description, amount))

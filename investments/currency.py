@@ -24,3 +24,21 @@ class Currency(Enum):
         elif self == Currency.EUR:
             return '€'
         return self.__repr__(self)
+
+    def iso_numeric_code(self) -> str:
+        """
+        Код валюты в соответствии с общероссийским классификатором валют (ОК (МК (ИСО 4217) 003-97) 014-2000).
+
+        see https://classifikators.ru/okv
+
+        Raises:
+            ValueError: if currency is unsupported
+
+        """
+        if self == Currency.USD:
+            return '840'
+        elif self == Currency.RUB:
+            return '643'
+        elif self == Currency.EUR:
+            return '978'
+        raise ValueError(self)
