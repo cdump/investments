@@ -5,7 +5,7 @@
 
 ## Установка/обновление
 ```
-$ pip install investments --upgrade --user
+$ pip3 install investments --upgrade --user
 ```
 или с помощью [poetry](https://python-poetry.org/)
 
@@ -25,9 +25,12 @@ $ pip install investments --upgrade --user
 ![ibtax report example](./images/ibtax_2020.jpg)
 
 ### Запуск
-Запустить `ibtax` указав в `--activity-reports-dir` и `--confirmation-reports-dir` директории отчетами в формате `.csv` (см. *Подготовка отчетов Interactive Brokers*)
-
-Важно, чтобы csv-отчеты `activity` и `confirmation` были в разных директориях!
+```
+$ python3 -m investments.ibtax --activity-reports-dir /path/to/activity/dir --confirmation-reports-dir /path/to/confirmation/dir
+```
+Отчеты `activity` & `confirmation` должны:
+- быть выгружены из IB в формате CSV
+- лежать в разных директориях (см. *Подготовка отчетов Interactive Brokers*)
 
 
 ## Утилита ibdds
@@ -40,9 +43,12 @@ $ pip install investments --upgrade --user
 ![ibdds report example](./images/ibdds_2020.png)
 
 ### Запуск
-Запустить `ibdds` указав в `--activity-report-filepath` путь до отчёта о активности по счёту в формате `.csv` (см. *Подготовка отчетов Interactive Brokers*)
-
-Важно: утилита не проверяет период отчёта `activity` и для корректной подготовки налоговой отчётности необходимо указать передать путь до отчёта за один год.
+```
+$ python3 -m investments.ibdds --activity-report-filepath /path/to/activity/report.csv
+```
+Отчет `activity` должен:
+- быть выгружен из IB в формате CSV
+- отражать активность за один год (см. *Подготовка отчетов Interactive Brokers*)
 
 
 ## Подготовка отчетов Interactive Brokers
