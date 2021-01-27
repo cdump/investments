@@ -1,6 +1,9 @@
 import csv
 import datetime
 from decimal import Decimal
+from typing import Any
+
+import pytest
 
 from investments.cash import Cash
 from investments.currency import Currency
@@ -193,8 +196,7 @@ Financial Instrument Information,Data,Stocks,VT,VANGUARD TOT WORLD STK ETF,52197
 Trades,Header,DataDiscriminator,Asset Category,Currency,Symbol,Date/Time,Quantity,T. Price,C. Price,Proceeds,Comm/Fee,Basis,Realized P/L,MTM P/L,Code
 Trades,Data,Order,Stocks,USD,VT,"2020-01-31, 09:30:00",10,80.62,79.73,-806.2,-1,807.2,0,-8.9,O
 Trades,Data,Order,Stocks,USD,VT,"2020-02-10, 09:38:00",-10,81.82,82.25,818.2,-1.01812674,-807.2,9.981873,-4.3,C
-Trades,SubTotal,,Stocks,USD,VT,,0,,,12,-2.01812674,0,9.981873,-13.2,
-Trades,Total,,Stocks,USD,,,,,,-57144.745,-25.563491343,57180.290364603,9.981873,-16.654,"""
+Trades,SubTotal,,Stocks,USD,VT,,0,,,12,-2.01812674,0,9.981873,-13.2,"""
 
     lines = lines.split('\n')
     p._settle_dates = {
@@ -232,3 +234,18 @@ Trades,Total,,Stocks,USD,,,,,,-57144.745,-25.563491343,57180.290364603,9.981873,
     assert p.trades[1].fee.currency == Currency.USD
     assert p.trades[1].fee_per_piece.amount == Decimal('-0.101812674')
     assert p.trades[1].fee_per_piece.currency == Currency.USD
+
+
+@pytest.mark.parametrize("case,expected", [
+    ('2020-06-02', datetime.date(2020, 6, 2)),
+    ('', None),
+])
+def test_parse_date(case: str, expected: Any):
+    if expected is None:
+        with pytest.raises(ValueError):
+            _parse_date(case)
+
+    else:
+        res = _parse_date(case)
+        assert res == expected
+

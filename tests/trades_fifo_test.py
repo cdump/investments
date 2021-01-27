@@ -1,5 +1,6 @@
 import datetime
 from decimal import Decimal
+from typing import List
 
 import pytest
 
@@ -96,3 +97,38 @@ def test_trades_fees_simple():
     assert sell_trade.quantity == -10
     assert sell_trade.price.amount == Decimal('81.82')
     assert sell_trade.fee_per_piece.amount == Decimal('-0.101812674')
+
+
+def test_trades_precision() -> List[FinishedTrade]:
+    ticker = Ticker(symbol='VT', kind=TickerKind.Stock)
+    test_case = [
+        Trade(
+            ticker=ticker,
+            trade_date=datetime.datetime(2020, 1, 31, 9, 30),  # 63,0359₽
+            settle_date=datetime.date(2020, 2, 4),  # 63,9091₽
+            quantity=10,
+            price=Money('80.62', Currency.USD),
+            fee=Money('-1', Currency.USD)
+        ),
+        Trade(
+            ticker=ticker,
+            trade_date=datetime.datetime(2020, 2, 10, 9, 38),  # 63,4720₽
+            settle_date=datetime.date(2020, 2, 12),  # 63,9490₽
+            quantity=-10,
+            price=Money('81.82', Currency.USD),
+            fee=Money('-1.01812674', Currency.USD)
+        )
+    ]
+
+    finished_trades = TradesAnalyzer(test_case).finished_trades
+
+    buy_trade: FinishedTrade = finished_trades[0]
+    assert buy_trade.price.amount == Decimal('80.62')
+    assert buy_trade.fee_per_piece.amount == Decimal('-0.1')
+
+    sell_trade: FinishedTrade = finished_trades[1]
+    assert sell_trade.price.amount == Decimal('81.82')
+    assert sell_trade.fee_per_piece.amount == Decimal('-0.101812674')
+
+    return finished_trades
+
