@@ -4,6 +4,7 @@ import os
 from typing import Iterable, List, Optional
 
 import pandas  # type: ignore
+from tabulate import tabulate
 
 from investments.calculators import compute_total_cost
 from investments.currency import Currency
@@ -115,6 +116,10 @@ def _show_header(msg: str):
     print(f'>>> {msg} <<<')
 
 
+def _show_year_header(year: str):
+    print('\n', '______' * 8, year, '______' * 8, '\n\n')
+
+
 def _show_fees_report(fees: pandas.DataFrame, year: int, verbose: bool):
     fees_by_year = fees[fees['tax_year'] == year].drop(columns=['tax_year'])
     if fees_by_year.empty:
@@ -182,6 +187,14 @@ def _show_trades_report(trades: pandas.DataFrame, year: int, verbose: bool):
     print('\n\n')
 
     _show_header('TRADES RESULTS BEFORE TAXES')
+    trades_summary_presenter = _prepare_trades_summary_report(trades_by_year)
+    if not verbose:
+        apply_round_for_dataframe(trades_summary_presenter, {'expenses', 'income', 'profit'}, 2)
+    print(trades_summary_presenter.reset_index().to_string())
+    print('\n\n')
+
+
+def _prepare_trades_summary_report(trades_by_year: pandas.DataFrame) -> pandas.DataFrame:
     trades_summary_presenter = trades_by_year.copy(deep=True).groupby(lambda idx: (
         trades_by_year.loc[idx, 'ticker'].kind,
         'expenses' if trades_by_year.loc[idx, 'quantity'] > 0 else 'income',
@@ -190,12 +203,7 @@ def _show_trades_report(trades: pandas.DataFrame, year: int, verbose: bool):
     trades_summary_presenter.index.name = ''
     trades_summary_presenter.columns.name = ''
     trades_summary_presenter['profit'] = trades_summary_presenter['income'] + trades_summary_presenter['expenses']
-
-    if not verbose:
-        apply_round_for_dataframe(trades_summary_presenter, {'expenses', 'income', 'profit'}, 2)
-
-    print(trades_summary_presenter.reset_index().to_string())
-    print('\n\n')
+    return trades_summary_presenter
 
 
 def show_portfolio_report(portfolio: List[PortfolioElement]):
@@ -203,6 +211,73 @@ def show_portfolio_report(portfolio: List[PortfolioElement]):
     for elem in portfolio:
         print(f'{elem.ticker}\tx\t{elem.quantity}')
     print('\n\n')
+
+
+def show_ndfl_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.DataFrame],
+                     fees: Optional[pandas.DataFrame], interests: Optional[pandas.DataFrame],
+                     filter_years: List[int], show_humanize_numbers: bool):  # noqa: WPS318,WPS319
+
+    years = set()
+    for report in (trades, dividends, fees, interests):
+        if report is not None:
+            years |= set(report['tax_year'].unique())
+
+    for year in years:  # noqa: WPS426
+        if filter_years and (year not in filter_years):
+            continue
+        _show_year_header(f'   {year}   ')
+
+        ndfl_report = [
+            ['Код дохода', 'Код расхода', 'Доход руб.', 'Расход руб.', 'Уплаченный налог руб.'],
+        ]
+
+        if dividends is not None:
+            # income code 1010
+            dividends_by_year = dividends[dividends['tax_year'] == year]
+            dividends_presenter = dividends_by_year.copy(deep=True)
+            income_dividends = dividends_presenter['amount_rub'].sum()
+            tax_dividends = dividends_presenter['tax_paid_rub'].sum()
+            if show_humanize_numbers:
+                income_dividends = income_dividends.round(2)
+                tax_dividends = tax_dividends.round(2)
+            ndfl_report.append(
+                [1010, None, income_dividends, 0, tax_dividends],
+            )
+
+        if trades is not None:
+            # income code 1530, expenses code 201 [@see НК РФ 214.1.3]
+            trades_by_year = trades[trades['tax_year'] == year]
+            trades_summary_presenter = _prepare_trades_summary_report(trades_by_year)
+            expenses_trades = abs(trades_summary_presenter['expenses'].sum())
+            income_trades = trades_summary_presenter['income'].sum()
+
+            if fees is not None:
+                fees_by_year = fees[fees['tax_year'] == year]
+                feed_presenter = fees_by_year.copy(deep=True)
+                expenses_trades += abs(feed_presenter['amount_rub'].sum())
+
+            if show_humanize_numbers:
+                income_trades = income_trades.round(2)
+                expenses_trades = expenses_trades.round(2)
+
+            ndfl_report.append(
+                [1530, 201, income_trades, expenses_trades, 0],
+            )
+
+        if interests is not None:
+            # income code 4800
+            interests_by_year = interests[interests['tax_year'] == year]
+            income_interests: Money = interests_by_year['amount_rub'].sum()
+            if show_humanize_numbers:
+                income_interests = income_interests.round(2)
+
+            ndfl_report.append(
+                [4800, None, income_interests, 0, 0],
+            )
+
+        print(tabulate(ndfl_report, headers='firstrow', tablefmt='presto', colalign=('right', 'decimal')))
+
+        _show_year_header(f'EOF {year}  ')
 
 
 def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.DataFrame],
@@ -216,7 +291,7 @@ def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.D
     for year in years:  # noqa: WPS426
         if filter_years and (year not in filter_years):
             continue
-        print('\n', '______' * 8, f'  {year}  ', '______' * 8, '\n')
+        _show_year_header(f'   {year}   ')
 
         if dividends is not None:
             _show_dividends_report(dividends, year, verbose)
@@ -230,7 +305,7 @@ def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.D
         if interests is not None:
             _show_interests_report(interests, year, verbose)
 
-        print('______' * 8, f'EOF {year}', '______' * 8, '\n\n\n')
+        _show_year_header(f'EOF {year}  ')
 
 
 def csvs_in_dir(directory: str):
@@ -272,6 +347,7 @@ def main():
     parser.add_argument('--cache-dir', type=str, default='.', help='directory for caching (CBR RUB exchange rates)')
     parser.add_argument('--years', type=lambda x: [int(v.strip()) for v in x.split(',')], default=[], help='comma separated years for final report, omit for all')
     parser.add_argument('--verbose', nargs='?', default=False, const=True, help='do not "prune" reversed dividends, show dividends tax percent, etc.')
+    parser.add_argument('--ndfl-summary', nargs='?', default=False, const=True, help='show summary or 3-ndfl year reporting')
     args = parser.parse_args()
 
     if os.path.abspath(args.activity_reports_dir) == os.path.abspath(args.confirmation_reports_dir):
@@ -306,8 +382,11 @@ def main():
 
     trades_report = prepare_trades_report(finished_trades, cbr_client_usd) if finished_trades else None
 
-    show_report(trades_report, dividends_report, fees_report, interests_report, args.years, args.verbose)
-    show_portfolio_report(portfolio)
+    if args.ndfl_summary:
+        show_ndfl_report(trades_report, dividends_report, fees_report, interests_report, args.years, not args.verbose)
+    else:
+        show_report(trades_report, dividends_report, fees_report, interests_report, args.years, args.verbose)
+        show_portfolio_report(portfolio)
 
 
 if __name__ == '__main__':

@@ -14,7 +14,7 @@ max-string-usages = 16
 
 max-local-variables = 25
 
-max-cognitive-score = 24
+max-cognitive-score = 28
 
 max-cognitive-average = 24
 
