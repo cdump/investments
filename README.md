@@ -33,6 +33,16 @@ $ python3 -m investments.ibtax --activity-reports-dir /path/to/activity/dir --co
 - быть выгружены из IB в формате CSV
 - лежать в разных директориях (см. *Подготовка отчетов Interactive Brokers*)
 
+#### Просмотр неокруглённых цифр в расчётах
+```
+$ python3 -m investments.ibtax --verbose --activity-reports-dir /path/to/activity/dir --confirmation-reports-dir /path/to/confirmation/dir
+```
+
+#### Экпорт отчёта в pdf файл
+```
+$ python3 -m investments.ibtax --save-to /path/to/ibtax-report.pdf --activity-reports-dir /path/to/activity/dir --confirmation-reports-dir /path/to/confirmation/dir
+```
+
 
 ## Утилита ibdds
 Утилита для подготовки отчёта о движении денежных средств по счетам у брокера Interactive Brokers (USA) для резидентов РФ
