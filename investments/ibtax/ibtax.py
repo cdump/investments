@@ -1,7 +1,7 @@
 import argparse
 import logging
 import os
-from typing import Dict, Iterable, List, Type
+from typing import Dict, List, Type
 
 import pandas  # type: ignore
 
@@ -15,13 +15,6 @@ from investments.interests import Interest
 from investments.money import Money
 from investments.report_parsers.ib import InteractiveBrokersReportParser
 from investments.trades_fifo import FinishedTrade, TradesAnalyzer
-
-
-def apply_round_for_dataframe(source: pandas.DataFrame, columns: Iterable, digits: int = 2) -> pandas.DataFrame:
-    source[list(columns)] = source[list(columns)].applymap(
-        lambda x: x.round(digits=digits) if isinstance(x, Money) else round(x, digits),
-    )
-    return source
 
 
 def prepare_trades_report(finished_trades: List[FinishedTrade], cbr_client_usd: cbr.ExchangeRatesRUB) -> pandas.DataFrame:
