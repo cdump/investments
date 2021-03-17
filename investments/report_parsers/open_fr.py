@@ -128,7 +128,7 @@ class OpenBrokerFRParser:
             trade_date=dt,
             settle_date=dt,
             quantity=qnty,
-            price=Money(0, Currency.RUB),  # TODO: other currencies
+            price=Money(0, Currency.RUB),
             fee=Money(0, Currency.RUB),
         ))
 
