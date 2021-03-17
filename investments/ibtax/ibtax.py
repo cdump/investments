@@ -228,7 +228,7 @@ def show_ndfl_report(trades: Optional[pandas.DataFrame], dividends: Optional[pan
         _show_year_header(f'   {year}   ')
 
         ndfl_report = [
-            ['Код дохода', 'Код расхода', 'Доход руб.', 'Расход руб.', 'Уплаченный налог руб.'],
+            ['Код дохода', 'Код расхода', 'Доход руб.', 'Расход руб.', 'Уплаченный налог руб.', 'Источник выплаты'],
         ]
 
         if dividends is not None:
@@ -241,7 +241,7 @@ def show_ndfl_report(trades: Optional[pandas.DataFrame], dividends: Optional[pan
                 income_dividends = income_dividends.round(2)
                 tax_dividends = tax_dividends.round(2)
             ndfl_report.append(
-                [1010, None, income_dividends, 0, tax_dividends],
+                [1010, None, income_dividends, 0, tax_dividends, 'Interactive Brokers dividends'],
             )
 
         if trades is not None:
@@ -261,7 +261,7 @@ def show_ndfl_report(trades: Optional[pandas.DataFrame], dividends: Optional[pan
                 expenses_trades = expenses_trades.round(2)
 
             ndfl_report.append(
-                [1530, 201, income_trades, expenses_trades, 0],
+                [1530, 201, income_trades, expenses_trades, 0, 'Interactive Brokers trades'],
             )
 
         if interests is not None:
@@ -272,7 +272,7 @@ def show_ndfl_report(trades: Optional[pandas.DataFrame], dividends: Optional[pan
                 income_interests = income_interests.round(2)
 
             ndfl_report.append(
-                [4800, None, income_interests, 0, 0],
+                [4800, None, income_interests, 0, 0, 'Interactive Brokers interests'],
             )
 
         print(tabulate(ndfl_report, headers='firstrow', tablefmt='presto', colalign=('right', 'decimal')))
