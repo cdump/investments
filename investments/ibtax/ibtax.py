@@ -10,7 +10,7 @@ from investments.currency import Currency
 from investments.data_providers import cbr
 from investments.dividend import Dividend
 from investments.fees import Fee
-from investments.ibtax.report_presenter import NativeReportPresenter, ReportPresenter  # noqa: I001
+from investments.ibtax import report_presenter
 from investments.interests import Interest
 from investments.money import Money
 from investments.report_parsers.ib import InteractiveBrokersReportParser
@@ -143,8 +143,9 @@ def parse_reports(activity_reports_dir: str, confirmation_reports_dir: str) -> I
 
 
 def main():
-    available_report_types: Dict[str, Type[ReportPresenter]] = {
-        'native': NativeReportPresenter,
+    available_report_types: Dict[str, Type[report_presenter.ReportPresenter]] = {
+        'native': report_presenter.NativeReportPresenter,
+        'ndfl': report_presenter.NdflDetailsReportPresenter,
     }
 
     parser = argparse.ArgumentParser()

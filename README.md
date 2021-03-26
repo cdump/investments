@@ -18,6 +18,7 @@ $ pip3 install investments --upgrade --user
 - раздельный результат сделок по акциям и опционам + дивиденды
 - учёт начисленных процентов на остаток по счету
 - учёт комисий по сделкам
+- подготовка пояснительной записки к 3-НДФЛ в PDF формате
 - пока **НЕ** поддерживаются валюты CNH, ILS, MXN, NZD
 - пока **НЕ** поддерживаются сплиты
 - пока **НЕ** поддерживаются сделки Forex, сделка пропускается и выводится сообщение о том, что это может повлиять на итоговый отчет
@@ -41,6 +42,11 @@ $ python3 -m investments.ibtax --verbose --activity-reports-dir /path/to/activit
 #### Экпорт отчёта в pdf файл
 ```
 $ python3 -m investments.ibtax --save-to /path/to/ibtax-report.pdf --activity-reports-dir /path/to/activity/dir --confirmation-reports-dir /path/to/confirmation/dir
+```
+
+#### Подготовка пояснительной записки с расчёами для подачи 3-НДФЛ
+```
+$ python3 -m investments.ibtax --years=2020 --report-type ndfl --save-to /path/to/ibtax-report.pdf --activity-reports-dir /path/to/activity/dir --confirmation-reports-dir /path/to/confirmation/dir
 ```
 
 
