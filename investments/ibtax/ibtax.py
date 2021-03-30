@@ -272,14 +272,17 @@ def main():
     parser.add_argument('--cache-dir', type=str, default='.', help='directory for caching (CBR RUB exchange rates)')
     parser.add_argument('--years', type=lambda x: [int(v.strip()) for v in x.split(',')], default=[], help='comma separated years for final report, omit for all')
     parser.add_argument('--verbose', nargs='?', default=False, const=True, help='do not "prune" reversed dividends, show dividends tax percent, etc.')
+    parser.add_argument('--quiet', nargs='?', default=False, const=True, help='suppress non-error messages')
     args = parser.parse_args()
-
-    if os.path.abspath(args.activity_reports_dir) == os.path.abspath(args.confirmation_reports_dir):
-        print('--activity-reports-dir and --confirmation-reports-dir MUST be different directories')
-        return
 
     if args.verbose:
         logging.basicConfig(level=logging.INFO)
+    elif args.quiet:
+        logging.basicConfig(level=logging.ERROR)
+
+    if os.path.abspath(args.activity_reports_dir) == os.path.abspath(args.confirmation_reports_dir):
+        logging.error('--activity-reports-dir and --confirmation-reports-dir MUST be different directories')
+        return
 
     parser_object = parse_reports(args.activity_reports_dir, args.confirmation_reports_dir)
 
@@ -289,7 +292,7 @@ def main():
     interests = parser_object.interests
 
     if not trades:
-        logging.warning('no trades found')
+        logging.error('no trades found')
         return
 
     # fixme first_year without dividends
