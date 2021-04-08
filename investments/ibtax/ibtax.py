@@ -241,7 +241,7 @@ def csvs_in_dir(directory: str):
         if not filename.name.lower().endswith('.csv'):
             continue
         ret.append(filename.path)
-    return ret
+    return sorted(ret)
 
 
 def parse_reports(activity_reports_dir: str, confirmation_reports_dir: str) -> InteractiveBrokersReportParser:

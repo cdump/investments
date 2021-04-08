@@ -54,6 +54,8 @@ $ python3 -m investments.ibdds --activity-report-filepath /path/to/activity/repo
 ## Подготовка отчетов Interactive Brokers
 Для работы нужно выгрузить из [личного кабинета](https://www.interactivebrokers.co.uk/sso/Login) два типа отчетов: *Activity statement* (сделки, дивиденды, информация по инструментам и т.п.) и *Trade Confirmation* (settlement date, необходимая для правильной конвертации сумм по курсу ЦБ)
 
+Отчёты должны быть названы так, чтобы сортировались естественным образом по годам начиная от старого к новому. Такого можно достичь называя файлик номером года (например 2019.csv).
+
 ### Activity statement
 Для загрузки нужно перейти в **Reports / Tax Docs** > **Default Statements** > **Activity**
 

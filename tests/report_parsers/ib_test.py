@@ -78,6 +78,33 @@ Withholding Tax,Data,USD,2016-06-07,JNJ(US4781601046) Cash Dividend 0.80000000 U
     assert d[1].tax == Money(0.8, Currency.USD)
 
 
+def test_parse_dividends_with_changed_tax():
+    """Обработка возврата WHT по дивидендам в начале следующего года."""
+
+    p = InteractiveBrokersReportParser()
+
+    lines = """Financial Instrument Information,Header,Asset Category,Symbol,Description,Conid,Security ID,Multiplier,Type,Code
+Financial Instrument Information,Data,Stocks,FREL,FIDELITY REAL ESTATE ETF,183005003,US3160928574,1,ETF,
+Dividends,Header,Currency,Date,Description,Amount
+Dividends,Data,USD,2020-03-25,FREL(US3160928574) Cash Dividend USD 0.282 per Share (Ordinary Dividend),54.14
+Withholding Tax,Header,Currency,Date,Description,Amount,Code
+Withholding Tax,Data,USD,2020-03-25,FREL(US3160928574) Cash Dividend USD 0.282 per Share - US Tax,-5.41,
+Withholding Tax,Data,USD,2020-03-25,FREL(US3160928574) Cash Dividend USD 0.282 per Share - US Tax,5.41,
+Withholding Tax,Data,USD,2020-03-25,FREL(US3160928574) Cash Dividend USD 0.282 per Share - US Tax,-3.07,"""
+
+    lines = lines.split('\n')
+    p._real_parse_activity_csv(csv.reader(lines, delimiter=','), {
+        'Financial Instrument Information': p._parse_instrument_information,
+        'Dividends': p._parse_dividends,
+        'Withholding Tax': p._parse_withholding_tax,
+    })
+
+    d = p.dividends
+    assert d[0].ticker.symbol == 'FREL'
+    assert d[0].amount == Money(54.14, Currency.USD)
+    assert d[0].tax == Money(3.07, Currency.USD)
+
+
 def test_parse_ticker_description_changed():
     p = InteractiveBrokersReportParser()
 
