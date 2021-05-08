@@ -14,6 +14,28 @@ class Currency(Enum):
     USD = (('$', 'USD'), '840', 'R01235')
     RUB = (('₽', 'RUB', 'RUR'), '643', '')
     EUR = (('€', 'EUR'), '978', 'R01239')
+    AUD = (('AUD',), '036', 'R01010')
+    GBP = (('GBP',), '826', 'R01035')
+    CAD = (('CAD',), '124', 'R01350')
+    CZK = (('CZK',), '203', 'R01760')
+    DKK = (('DKK',), '208', 'R01215')
+    HKD = (('HKD',), '344', 'R01200')
+    HUF = (('HUF',), '348', 'R01135')
+    YEN = (('YEN',), '392', 'R01820')
+    KRW = (('KRW',), '410', 'R01815')
+    NOK = (('NOK',), '578', 'R01535')
+    PLN = (('PLN',), '985', 'R01565')
+    SGD = (('SGD',), '702', 'R01625')
+    ZAR = (('ZAR',), '710', 'R01810')
+    SEK = (('SEK',), '752', 'R01770')
+    CHF = (('CHF',), '756', 'R01775')
+    TRY = (('TRY',), '949', 'R01700J')
+
+    # unknown currency for cbr.ru
+    # CNH = (('CNH',), 'unknown', 'unknown')
+    # ILS = (('ILS',), '376', 'unknown')
+    # MXN = (('MXN',), '484', 'unknown')
+    # NZD = (('NZD',), '554', 'unknown')
 
     def __init__(self, aliases: Tuple[str], iso_code: str, cbr_code: str):
         self._iso_code = iso_code
@@ -21,11 +43,12 @@ class Currency(Enum):
         self.aliases = aliases
 
     @staticmethod
-    def parse(strval: str):
+    def parse(search: str):
         try:
-            return [item for _, item in Currency.__members__.items() if strval in item.aliases][0]
+            return [currency_item for _, currency_item in Currency.__members__.items()  # noqa: WPS609
+                    if search in currency_item.aliases][0]
         except IndexError:
-            raise ValueError(strval)
+            raise ValueError(search)
 
     def __str__(self):
         return str(self.aliases[0])
