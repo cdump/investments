@@ -45,8 +45,10 @@ class Currency(Enum):
     @staticmethod
     def parse(search: str):
         try:
-            return [currency_item for _, currency_item in Currency.__members__.items()  # noqa: WPS609
-                    if search in currency_item.aliases][0]
+            return [
+                currency_item for _, currency_item in Currency.__members__.items()  # noqa: WPS609
+                if search in currency_item.aliases
+            ][0]
         except IndexError:
             raise ValueError(search)
 

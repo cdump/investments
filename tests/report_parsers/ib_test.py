@@ -156,6 +156,9 @@ def test_parse_interests():
 Interest,Data,RUB,2020-03-04,RUB Credit Interest for Feb-2020,3.21
 Interest,Data,Total,,,3.21
 Interest,Data,Total in USD,,,0.04844211
+Interest,Data,CAD,2020-03-04,CAD Credit Interest for Feb-2020,7.45
+Interest,Data,Total,,,7.45
+Interest,Data,Total in USD,,,6.69
 Interest,Data,USD,2020-03-04,USD Credit Interest for Feb-2020,0.09
 Interest,Data,Total,,,0.09
 Interest,Data,Total Interest in USD,,,0.13844211"""
@@ -165,11 +168,13 @@ Interest,Data,Total Interest in USD,,,0.13844211"""
         'Interest': p._parse_interests,
     })
 
-    assert len(p.interests) == 2
+    assert len(p.interests) == 3
     assert p.interests[0] == Interest(date=datetime.date(2020, 3, 4), amount=Money(3.21, Currency.RUB),
                                       description='RUB Credit Interest for Feb-2020')
-    assert p.interests[1] == Interest(date=datetime.date(2020, 3, 4), amount=Money(0.09, Currency.USD),
+    assert p.interests[2] == Interest(date=datetime.date(2020, 3, 4), amount=Money(0.09, Currency.USD),
                                       description='USD Credit Interest for Feb-2020')
+    assert p.interests[1] == Interest(date=datetime.date(2020, 3, 4), amount=Money(7.45, Currency.CAD),
+                                      description='CAD Credit Interest for Feb-2020')
 
 
 def test_parse_cash():

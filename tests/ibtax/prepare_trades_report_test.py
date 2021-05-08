@@ -29,7 +29,7 @@ def test_simple_trades():
         FinishedTrade(N=2, ticker=ticker, trade_date=datetime.datetime(2020, 2, 10, 0, 0), settle_date=datetime.datetime(2020, 2, 12, 0, 0), quantity=-10,
                       price=Money(81.82, Currency.USD), fee_per_piece=Money('-0.101812674', Currency.USD)),
     ]
-    cbr_client = ExchangeRatesRUB(Currency.USD)
+    cbr_client = ExchangeRatesRUB()
 
     res: dict = prepare_trades_report(trades, cbr_client).to_dict()
 
@@ -85,7 +85,7 @@ def test_precision():
 
     test_case = test_trades_precision()
 
-    res: dict = prepare_trades_report(test_case, ExchangeRatesRUB(Currency.USD)).to_dict()
+    res: dict = prepare_trades_report(test_case, ExchangeRatesRUB()).to_dict()
 
     assert [x.amount for x in res['total_rub'].values()] == [
         Decimal('-51586.552320'),  # Расход: (80.62 * 10 * 63.9091) + (0.1 * 10 * 63.0359) = 51586.55232₽

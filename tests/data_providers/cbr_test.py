@@ -1,4 +1,4 @@
-from datetime import datetime, date
+from datetime import datetime
 from decimal import Decimal
 
 import pytest  # type: ignore
@@ -26,19 +26,19 @@ test_cases = [
 @pytest.mark.parametrize('trade_date,currency,expect_rate', test_cases)
 def test_exchange_rates_rub(trade_date: datetime, currency: Currency, expect_rate: Money):
     try:
-        p = ExchangeRatesRUB(currency=currency, year_from=2015, cache_dir=None)
+        p = ExchangeRatesRUB(year_from=2015, cache_dir=None)
     except ConnectionError as ex:
         pytest.skip(f'connection error: {ex}')
         return
 
-    rate = p.get_rate(trade_date)
+    rate = p.get_rate(currency, trade_date)
     assert rate == expect_rate, f'{trade_date}: {rate} != {expect_rate}'
 
 
 def test_convert_to_rub():
-    client_usd = ExchangeRatesRUB(Currency.USD)
+    client_usd = ExchangeRatesRUB()
     rate_date = datetime(2020, 3, 31)
-    expected_rate = client_usd.get_rate(rate_date)
+    expected_rate = client_usd.get_rate(Currency.USD, rate_date)
     assert expected_rate.amount == Decimal('77.7325')
 
     test_usd = Money(10.98, Currency.USD)
@@ -52,9 +52,3 @@ def test_convert_to_rub():
 
     assert res.amount == Decimal('858.3066')
     assert res.currency == Currency.RUB
-
-
-def test_unknown_currency():
-    with pytest.raises(NotImplementedError) as ex:
-        ExchangeRatesRUB(currency=20, year_from=2015, cache_dir=None)
-    assert 'only USD and EUR currencies supported' in str(ex.value)
