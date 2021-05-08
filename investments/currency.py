@@ -16,8 +16,8 @@ class Currency(Enum):
     EUR = (('€', 'EUR'), '978', 'R01239')
 
     def __init__(self, aliases: Tuple[str], iso_code: str, cbr_code: str):
-        self.iso_code = iso_code
-        self.cbr_code = cbr_code
+        self._iso_code = iso_code
+        self._cbr_code = cbr_code
         self.aliases = aliases
 
     @staticmethod
@@ -35,10 +35,17 @@ class Currency(Enum):
         """
         Код валюты в соответствии с общероссийским классификатором валют (ОК (МК (ИСО 4217) 003-97) 014-2000).
 
-        see https://classifikators.ru/okv
-
-        Raises:
-            ValueError: if currency is unsupported
+        @see https://classifikators.ru/okv
 
         """
-        return self.iso_code
+        return self._iso_code
+
+    @property
+    def cbr_code(self) -> str:
+        """
+        Код валюты в соответствии с классификатором ЦБ РФ.
+
+        @see http://www.cbr.ru/scripts/XML_daily_eng.asp?date_req=22/01/2020
+
+        """
+        return self._cbr_code

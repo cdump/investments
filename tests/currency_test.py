@@ -33,3 +33,12 @@ def test_repr(currency: Currency, expected_repr: str):
 ])
 def test_iso_numeric_code(currency: Currency, expected: str):
     assert currency.iso_numeric_code == expected
+
+
+@pytest.mark.parametrize('currency,expected', [
+    (Currency.USD, 'R01235'),
+    (Currency.RUB, ''),
+    (Currency.EUR, 'R01239'),
+])
+def test_cbr_code(currency: Currency, expected: str):
+    assert currency.cbr_code == expected
