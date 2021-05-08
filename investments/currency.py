@@ -1,30 +1,36 @@
-from enum import Enum
+from enum import Enum, unique
+from typing import Tuple
 
 
+@unique
 class Currency(Enum):
-    USD = 1
-    RUB = 2
-    EUR = 3
+    """
+    Список поддерживаемых валют следует смотреть на официальном сайте IB.
+
+    @see https://www.interactivebrokers.com/en/index.php?f=1323
+
+    """
+
+    USD = (('$', 'USD'), '840', 'R01235')
+    RUB = (('₽', 'RUB', 'RUR'), '643', '')
+    EUR = (('€', 'EUR'), '978', 'R01239')
+
+    def __init__(self, aliases: Tuple[str], iso_code: str, cbr_code: str):
+        self.iso_code = iso_code
+        self.cbr_code = cbr_code
+        self.aliases = aliases
 
     @staticmethod
     def parse(strval: str):
-        if strval in {'$', 'USD'}:
-            return Currency.USD
-        if strval in {'₽', 'RUB'}:
-            return Currency.RUB
-        if strval in {'€', 'EUR'}:
-            return Currency.EUR
-        raise ValueError(strval)
+        try:
+            return [item for _, item in Currency.__members__.items() if strval in item.aliases][0]
+        except IndexError:
+            raise ValueError(strval)
 
     def __str__(self):
-        if self == Currency.USD:
-            return '$'
-        elif self == Currency.RUB:
-            return '₽'
-        elif self == Currency.EUR:
-            return '€'
-        return self.__repr__(self)
+        return str(self.aliases[0])
 
+    @property
     def iso_numeric_code(self) -> str:
         """
         Код валюты в соответствии с общероссийским классификатором валют (ОК (МК (ИСО 4217) 003-97) 014-2000).
@@ -35,10 +41,4 @@ class Currency(Enum):
             ValueError: if currency is unsupported
 
         """
-        if self == Currency.USD:
-            return '840'
-        elif self == Currency.RUB:
-            return '643'
-        elif self == Currency.EUR:
-            return '978'
-        raise ValueError(self)
+        return self.iso_code

@@ -62,7 +62,7 @@ def show_report(cash: List[Cash]):
         withdrawals_amount = dds_specific_round(sum(withdrawals) if withdrawals else Money(0, currency))
 
         report = [
-            [f'{currency.name} {currency.iso_numeric_code()}', 'Сумма в тысячах единиц'],
+            [f'{currency.name} {currency.iso_numeric_code}', 'Сумма в тысячах единиц'],
             ['Остаток денежных средств на счете на начало отчетного периода', begin_amount],
             ['Зачислено денежных средств за отчетный период', deposits_amount],
             ['Списано денежных средств за отчетный период', abs(withdrawals_amount)],
