@@ -78,6 +78,33 @@ Withholding Tax,Data,USD,2016-06-07,JNJ(US4781601046) Cash Dividend 0.80000000 U
     assert d[1].tax == Money(0.8, Currency.USD)
 
 
+def test_parse_dividends_with_changed_tax():
+    """Обработка возврата WHT по дивидендам в начале следующего года."""
+
+    p = InteractiveBrokersReportParser()
+
+    lines = """Financial Instrument Information,Header,Asset Category,Symbol,Description,Conid,Security ID,Multiplier,Type,Code
+Financial Instrument Information,Data,Stocks,FREL,FIDELITY REAL ESTATE ETF,183005003,US3160928574,1,ETF,
+Dividends,Header,Currency,Date,Description,Amount
+Dividends,Data,USD,2020-03-25,FREL(US3160928574) Cash Dividend USD 0.282 per Share (Ordinary Dividend),54.14
+Withholding Tax,Header,Currency,Date,Description,Amount,Code
+Withholding Tax,Data,USD,2020-03-25,FREL(US3160928574) Cash Dividend USD 0.282 per Share - US Tax,-5.41,
+Withholding Tax,Data,USD,2020-03-25,FREL(US3160928574) Cash Dividend USD 0.282 per Share - US Tax,5.41,
+Withholding Tax,Data,USD,2020-03-25,FREL(US3160928574) Cash Dividend USD 0.282 per Share - US Tax,-3.07,"""
+
+    lines = lines.split('\n')
+    p._real_parse_activity_csv(csv.reader(lines, delimiter=','), {
+        'Financial Instrument Information': p._parse_instrument_information,
+        'Dividends': p._parse_dividends,
+        'Withholding Tax': p._parse_withholding_tax,
+    })
+
+    d = p.dividends
+    assert d[0].ticker.symbol == 'FREL'
+    assert d[0].amount == Money(54.14, Currency.USD)
+    assert d[0].tax == Money(3.07, Currency.USD)
+
+
 def test_parse_ticker_description_changed():
     p = InteractiveBrokersReportParser()
 
@@ -129,6 +156,9 @@ def test_parse_interests():
 Interest,Data,RUB,2020-03-04,RUB Credit Interest for Feb-2020,3.21
 Interest,Data,Total,,,3.21
 Interest,Data,Total in USD,,,0.04844211
+Interest,Data,CAD,2020-03-04,CAD Credit Interest for Feb-2020,7.45
+Interest,Data,Total,,,7.45
+Interest,Data,Total in USD,,,6.69
 Interest,Data,USD,2020-03-04,USD Credit Interest for Feb-2020,0.09
 Interest,Data,Total,,,0.09
 Interest,Data,Total Interest in USD,,,0.13844211"""
@@ -138,11 +168,13 @@ Interest,Data,Total Interest in USD,,,0.13844211"""
         'Interest': p._parse_interests,
     })
 
-    assert len(p.interests) == 2
+    assert len(p.interests) == 3
     assert p.interests[0] == Interest(date=datetime.date(2020, 3, 4), amount=Money(3.21, Currency.RUB),
                                       description='RUB Credit Interest for Feb-2020')
-    assert p.interests[1] == Interest(date=datetime.date(2020, 3, 4), amount=Money(0.09, Currency.USD),
+    assert p.interests[2] == Interest(date=datetime.date(2020, 3, 4), amount=Money(0.09, Currency.USD),
                                       description='USD Credit Interest for Feb-2020')
+    assert p.interests[1] == Interest(date=datetime.date(2020, 3, 4), amount=Money(7.45, Currency.CAD),
+                                      description='CAD Credit Interest for Feb-2020')
 
 
 def test_parse_cash():
