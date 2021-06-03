@@ -84,7 +84,7 @@ def prepare_dividends_report(dividends: List[Dividend], cbr_client_usd: cbr.Exch
     return df
 
 
-def prepare_fees_report(fees: List[Fee], cbr_client_usd: cbr.ExchangeRatesRUB) -> pandas.DataFrame:
+def prepare_fees_report(fees: List[Fee], cbr_client_usd: cbr.ExchangeRatesRUB, verbose: bool) -> pandas.DataFrame:
     operation_date_column = 'date'
     df_data = [
         (i + 1, pandas.to_datetime(x.date), x.amount, x.description, x.date.year)
@@ -92,6 +92,13 @@ def prepare_fees_report(fees: List[Fee], cbr_client_usd: cbr.ExchangeRatesRUB) -
     ]
     df = pandas.DataFrame(df_data, columns=['N', operation_date_column, 'amount', 'description', 'tax_year'])
     df['rate'] = df.apply(lambda x: cbr_client_usd.get_rate(x['amount'].currency, x[operation_date_column]), axis=1)
+
+    if not verbose:
+        df['abs_amount_del'] = df.apply(lambda x: abs(x.amount.amount), axis=1)
+        df.drop_duplicates(subset=[operation_date_column, 'description', 'abs_amount_del'], keep=False, inplace=True)
+        df.drop(columns=['abs_amount_del'], inplace=True)
+        df['N'] = range(1, len(df) + 1)
+
     df['amount_rub'] = df.apply(lambda x: cbr_client_usd.convert_to_rub(x['amount'], x[operation_date_column]), axis=1)
     return df
 
@@ -297,7 +304,7 @@ def main():
     cbr_client_usd = cbr.ExchangeRatesRUB(year_from=first_year, cache_dir=args.cache_dir)
 
     dividends_report = prepare_dividends_report(dividends, cbr_client_usd, args.verbose) if dividends else None
-    fees_report = prepare_fees_report(fees, cbr_client_usd) if fees else None
+    fees_report = prepare_fees_report(fees, cbr_client_usd, args.verbose) if fees else None
     interests_report = prepare_interests_report(interests, cbr_client_usd) if interests else None
 
     analyzer = TradesAnalyzer(trades)
