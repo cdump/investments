@@ -97,7 +97,7 @@ class ReportPresenter(ABC):
         tabulate_data: Union[list, pandas.DataFrame],
         headers: Union[str, List[str]] = 'keys',
         **kwargs,
-    ) -> str:
+    ):
         defaults = {
             'showindex': False,
             'numalign': 'decimal',
@@ -144,8 +144,11 @@ class NativeReportPresenter(ReportPresenter):
     def _append_portfolio_report(self, portfolio: List[PortfolioElement]):
         self._append_padding()
         self._append_header('PORTFOLIO')
-        self._append_output(self._append_table([[str(elem.ticker), elem.quantity] for elem in portfolio],
-                                               headers=['Ticker', 'Quantity'], colalign=('left',)))
+        self._append_table(
+            [[str(elem.ticker), elem.quantity] for elem in portfolio],
+            headers=['Ticker', 'Quantity'],
+            colalign=('left',),
+        )
 
     def _append_dividends_report(self, dividends: pandas.DataFrame, year: int):
         dividends_by_year = self.filter_by_year(dividends, year)
@@ -308,8 +311,8 @@ class NdflDetailsReportPresenter(ReportPresenter):
         trades_presenter['raw_fee_rate'] = trades_presenter.apply(lambda x: x.fee_rate.amount, axis=1)
         trades_presenter['raw_total_amount_rub'] = trades_presenter.apply(lambda x: x.raw_settle_rate * x.raw_total_amount, axis=1)
         trades_presenter['raw_fee_amount_rub'] = trades_presenter.apply(lambda x: x.raw_fee_rate * x.raw_fee_amount, axis=1)
-        trades_presenter['currency_code'] = trades_presenter.apply(lambda x: x.price.currency.iso_numeric_code(), axis=1)
-        trades_presenter['fee_currency_code'] = trades_presenter.apply(lambda x: x.fee.currency.iso_numeric_code(), axis=1)
+        trades_presenter['currency_code'] = trades_presenter.apply(lambda x: x.price.currency.iso_numeric_code, axis=1)
+        trades_presenter['fee_currency_code'] = trades_presenter.apply(lambda x: x.fee.currency.iso_numeric_code, axis=1)
 
         columns = ['Дата операции', 'Код', 'Наименование', 'Количество ЦБ', 'Сумма в валюте', 'Код валюты', 'Курс ЦБ', 'Сумма в рублях']
         if self.rounding_enabled():
@@ -379,7 +382,7 @@ class NdflDetailsReportPresenter(ReportPresenter):
 
         feed_presenter['raw_amount'] = feed_presenter.apply(lambda x: x.amount.amount * -1, axis=1)
         feed_presenter['raw_amount_rub'] = feed_presenter.apply(lambda x: x.amount_rub.amount * -1, axis=1)
-        feed_presenter['currency_code'] = feed_presenter.apply(lambda x: x.amount.currency.iso_numeric_code(), axis=1)
+        feed_presenter['currency_code'] = feed_presenter.apply(lambda x: x.amount.currency.iso_numeric_code, axis=1)
         feed_presenter['raw_rate'] = feed_presenter.apply(lambda x: 1 if x.amount.currency == Currency.RUB else x.rate.amount, axis=1)
 
         # это некоторая вольность трактовки, учитывая что в данных комиссиях в том числе встречается плата за актуальные снапшоты цен
@@ -413,7 +416,7 @@ class NdflDetailsReportPresenter(ReportPresenter):
         interests_presenter['description'] = 'Начисление процентов на остаток по счёту'
         interests_presenter['raw_amount'] = interests_presenter.apply(lambda x: x.amount.amount, axis=1)
         interests_presenter['raw_amount_rub'] = interests_presenter.apply(lambda x: x.amount_rub.amount, axis=1)
-        interests_presenter['currency_code'] = interests_presenter.apply(lambda x: x.amount.currency.iso_numeric_code(), axis=1)
+        interests_presenter['currency_code'] = interests_presenter.apply(lambda x: x.amount.currency.iso_numeric_code, axis=1)
         interests_presenter['raw_rate'] = interests_presenter.apply(lambda x: 1 if x.amount.currency == Currency.RUB else x.rate.amount, axis=1)
         interests_presenter['total_tax'] = interests_presenter.apply(lambda x: x.raw_amount_rub * self.TAX_RATE, axis=1)
         interests_presenter['unpaid_tax'] = interests_presenter.apply(lambda x: x.total_tax, axis=1)
@@ -449,7 +452,7 @@ class NdflDetailsReportPresenter(ReportPresenter):
         dividends_presenter['income_code'] = self.DIVIDENDS_INCOME_CODE
         dividends_presenter['ticker'] = dividends_presenter.apply(lambda x: x.ticker.symbol, axis=1)
         dividends_presenter['raw_amount'] = dividends_presenter.apply(lambda x: x.amount.amount, axis=1)
-        dividends_presenter['currency_code'] = dividends_presenter.apply(lambda x: x.amount.currency.iso_numeric_code(), axis=1)
+        dividends_presenter['currency_code'] = dividends_presenter.apply(lambda x: x.amount.currency.iso_numeric_code, axis=1)
         dividends_presenter['raw_rate'] = dividends_presenter.apply(lambda x: x.rate.amount, axis=1)
         dividends_presenter['raw_amount_rub'] = dividends_presenter.apply(lambda x: x.amount_rub.amount, axis=1)
         dividends_presenter['raw_tax_paid'] = dividends_presenter.apply(lambda x: x.tax_paid.amount, axis=1)

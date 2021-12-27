@@ -109,7 +109,7 @@ $ poetry run ibtax
 usage: ibtax [-h] --activity-reports-dir ACTIVITY_REPORTS_DIR --confirmation-reports-dir CONFIRMATION_REPORTS_DIR [--cache-dir CACHE_DIR] [--years YEARS] [--verbose]
 ibtax: error: the following arguments are required: --activity-reports-dir, --confirmation-reports-dir
 
-$ vim investments/ibtax/ibtax.py # edit main file for example
+$ %apply u changes here%
 
 $ poetry run ibtax # run updated version
 ```
