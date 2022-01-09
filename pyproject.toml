@@ -20,17 +20,18 @@ ibtax = "investments.ibtax.ibtax:main"
 ibdds = "investments.ibdds.ibdds:main"
 
 [tool.poetry.dependencies]
-python = "^3.6.1 || ^3.7"
-pandas = "^1.0.3"
-requests = "^2.23.0"
-aiomoex = "^1.2.2"
-tabulate = "^0.8.7"
+python = "^3.8"
+pandas = "^1.3.5"
+requests = "^2.27.1"
+tabulate = "^0.8.9"
+aiomoex = "^2.0.0"
 
 [tool.poetry.dev-dependencies]
-pytest = "^5.4"
-mypy = "^0.782"
-wemake-python-styleguide = "^0.14.1"
-jedi = "^0.18.0"
+pytest = "^6.2.5"
+mypy = "^0.931"
+wemake-python-styleguide = "^0.16.0"
+types-requests = "^2.27.3"
+types-tabulate = "^0.8.5"
 
 [build-system]
 requires = ["poetry>=0.12"]
