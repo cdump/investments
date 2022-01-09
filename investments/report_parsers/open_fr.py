@@ -1,6 +1,6 @@
 import datetime
 import re
-import xml.etree.ElementTree as ET  # type: ignore
+import xml.etree.ElementTree as ET  # noqa:N817
 from typing import List, Optional
 
 from investments.currency import Currency

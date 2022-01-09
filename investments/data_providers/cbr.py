@@ -7,7 +7,7 @@
 
 import datetime
 import logging
-import xml.etree.ElementTree as ET  # type: ignore
+import xml.etree.ElementTree as ET  # noqa:N817
 from typing import Dict, List, Optional, Tuple
 
 import pandas  # type: ignore

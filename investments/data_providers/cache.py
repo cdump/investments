@@ -31,6 +31,5 @@ class DataFrameCache:
         return pandas.read_pickle(self._cache_file)
 
     def put(self, df: pandas.DataFrame):
-        if self._cache_file is None:
-            return None
-        df.to_pickle(self._cache_file)
+        if self._cache_file is not None:
+            df.to_pickle(self._cache_file)
