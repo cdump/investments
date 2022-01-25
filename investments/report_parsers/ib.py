@@ -22,6 +22,10 @@ def _parse_date(strval: str) -> datetime.date:
     return datetime.datetime.strptime(strval, '%Y-%m-%d').date()
 
 
+def _parse_trade_quantity(strval: str) -> int:
+    return int(strval.replace(',', ''))
+
+
 def _parse_dividend_description(description: str) -> Tuple[str, str]:
     m = re.match(r'^(\w+)\s*\(\w+\) (Cash Dividend|Payment in Lieu of Dividend|Choice Dividend)', description)
     if m is None:
@@ -240,7 +244,7 @@ class InteractiveBrokersReportParser:
             ticker=ticker,
             trade_date=dt,
             settle_date=settle_date,
-            quantity=int(f['Quantity']) * quantity_multiplier,
+            quantity=_parse_trade_quantity(f['Quantity']) * quantity_multiplier,
             price=Money(f['T. Price'], currency),
             fee=Money(f['Comm/Fee'], currency),
         ))
