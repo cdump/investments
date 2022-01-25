@@ -2,7 +2,7 @@ import csv
 import datetime
 import logging
 import re
-from typing import Dict, Iterator, List, Tuple
+from typing import Dict, Iterator, List, NamedTuple, Optional, Tuple
 
 from investments.cash import Cash
 from investments.currency import Currency
@@ -97,6 +97,49 @@ class TickersStorage:
         return self._multipliers[ticker]
 
 
+class SettleDate(NamedTuple):
+    order_id: str
+    settle_date: datetime.date
+
+
+class SettleDatesStorage:
+    def __init__(self):
+        self._settle_data: Dict[Tuple[str, datetime.datetime], SettleDate] = {}
+
+    def __len__(self):
+        return len(self._settle_data)
+
+    def put(
+        self,
+        ticker: str,
+        operation_date: datetime.datetime,
+        settle_date: datetime.date,
+        order_id: str,
+    ):
+        existing_item = self.get(ticker, operation_date)
+        if existing_item:
+            if existing_item.settle_date != settle_date and existing_item.order_id != order_id:
+                raise AssertionError(f'Duplicate settle date for key {(ticker, operation_date)} with {order_id}')
+        self._settle_data[(ticker, operation_date)] = SettleDate(order_id, settle_date)
+
+    def get(
+        self,
+        ticker: str,
+        operation_date: datetime.datetime,
+    ) -> Optional[SettleDate]:
+        return self._settle_data.get((ticker, operation_date))
+
+    def get_date(
+        self,
+        ticker: str,
+        operation_date: datetime.datetime,
+    ) -> Optional[datetime.date]:
+        existing_settle_item = self.get(ticker, operation_date)
+        if existing_settle_item:
+            return existing_settle_item.settle_date
+        return None
+
+
 class InteractiveBrokersReportParser:
     def __init__(self):
         self._trades = []
@@ -106,7 +149,7 @@ class InteractiveBrokersReportParser:
         self._cash: List[Cash] = []
         self._deposits_and_withdrawals = []
         self._tickers = TickersStorage()
-        self._settle_dates = {}
+        self._settle_dates = SettleDatesStorage()
 
     def __repr__(self):
         return f'IbParser(trades={len(self.trades)}, dividends={len(self.dividends)}, fees={len(self.fees)}, interests={len(self.interests)})'  # noqa: WPS221
@@ -181,14 +224,15 @@ class InteractiveBrokersReportParser:
             f = parser.parse(row)
             if f['LevelOfDetail'] != 'EXECUTION':
                 continue
-            settle_date = _parse_date(f['SettleDate'])
+            if f['TransactionType'] == 'TradeCancel':
+                continue
 
-            key = (f['Symbol'], _parse_datetime(f['Date/Time']))
-            existing_settle_date = self._settle_dates.get(key)
-            if existing_settle_date is not None:
-                assert existing_settle_date == settle_date
-            else:
-                self._settle_dates[key] = settle_date
+            self._settle_dates.put(
+                f['Symbol'],
+                _parse_datetime(f['Date/Time']),
+                _parse_date(f['SettleDate']),
+                f['OrderID'],
+            )
 
     def _real_parse_activity_csv(self, csv_reader: Iterator[List[str]], parsers):
         nrparser = NamedRowsParser()
@@ -233,13 +277,13 @@ class InteractiveBrokersReportParser:
 
         dt = _parse_datetime(f['Date/Time'])
 
-        settle_date = self._settle_dates.get((ticker.symbol, dt))
-        assert settle_date is not None
+        settle_date_item = self._settle_dates.get(ticker.symbol, dt)
+        assert settle_date_item is not None
 
         self._trades.append(Trade(
             ticker=ticker,
             trade_date=dt,
-            settle_date=settle_date,
+            settle_date=settle_date_item.settle_date,
             quantity=int(f['Quantity']) * quantity_multiplier,
             price=Money(f['T. Price'], currency),
             fee=Money(f['Comm/Fee'], currency),
