@@ -220,6 +220,33 @@ Cash Report,Data,Ending Settled Cash,USD,470.093845757,470.093845757,0,,,"""
     assert p.cash[15] == Cash(amount=Money(470.093845757, Currency.USD), description='Ending Settled Cash')
 
 
+def test_parse_trades_with_thousands_separator():
+    """Сделки с более чем 1000 бумаг в отчёте форматируются с запятой как разделителем тысяч."""
+    p = InteractiveBrokersReportParser()
+
+    lines = """Financial Instrument Information,Header,Asset Category,Symbol,Description,Conid,Security ID,Listing Exch,Multiplier,Type,Code
+Financial Instrument Information,Data,Stocks,NOK,NOKIA CORP-SPON ADR,661513,US6549022043,NYSE,1,ADR,
+Trades,Header,DataDiscriminator,Asset Category,Currency,Symbol,Date/Time,Quantity,T. Price,C. Price,Proceeds,Comm/Fee,Basis,Realized P/L,MTM P/L,Code
+Trades,Data,Order,Stocks,USD,NOK,"2020-04-03, 09:48:58","-3200",2.995,2.97,-958.4,-1.6,960,0,-8,O
+Trades,Data,Order,Stocks,USD,NOK,"2020-04-06, 11:43:36",500,3.125,3.16,-1562.5,-2.5,1565,0,17.5,O
+Trades,Data,Order,Stocks,USD,NOK,"2020-04-06, 11:44:50","5,000",3.125,3.16,-6250,-10,6260,0,70,O;P
+Trades,SubTotal,,Stocks,USD,NOK,,"2,299.81",,,-8770.9,-14.1,8785,0,79.5,"""
+
+    lines = lines.split('\n')
+    p._settle_dates = {
+        ('NOK', _parse_datetime('2020-04-03, 09:48:58')): _parse_date('2020-02-04'),
+        ('NOK', _parse_datetime('2020-04-06, 11:43:36')): _parse_date('2020-02-12'),
+        ('NOK', _parse_datetime('2020-04-06, 11:44:50')): _parse_date('2020-02-12'),
+    }
+    p._real_parse_activity_csv(csv.reader(lines, delimiter=','), {
+        'Financial Instrument Information': p._parse_instrument_information,
+        'Trades': p._parse_trades,
+    })
+
+    assert len(p.trades) == 3
+    assert {-3200, 500, 5000} == {trade.quantity for trade in p.trades}
+
+
 def test_parse_trades_with_fees():
     p = InteractiveBrokersReportParser()
 
