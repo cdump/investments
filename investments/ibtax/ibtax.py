@@ -13,7 +13,7 @@ from investments.fees import Fee
 from investments.interests import Interest
 from investments.money import Money
 from investments.report_parsers.ib import InteractiveBrokersReportParser
-from investments.trades_fifo import TradesAnalyzer, FinishedTrade, PortfolioElement  # noqa: I001
+from investments.trades_fifo import FinishedTrade, PortfolioElement, TradesAnalyzer
 
 
 def apply_round_for_dataframe(source: pandas.DataFrame, columns: Iterable, digits: int = 2) -> pandas.DataFrame:

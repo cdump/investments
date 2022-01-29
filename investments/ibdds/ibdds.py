@@ -11,8 +11,7 @@
 import argparse
 import csv
 import logging
-from pathlib import Path
-from typing import List
+from typing import Any, List
 
 from tabulate import tabulate
 
@@ -22,8 +21,9 @@ from investments.report_parsers.ib import InteractiveBrokersReportParser
 
 
 class InteractiveBrokersCashReportParser(InteractiveBrokersReportParser):
-    def parse_csv(self, *, activity_report_filepath: Path, **kwargs):
-        with open(activity_report_filepath, newline='') as activity_fh:
+    def parse_csv(self, *, activity_csvs: List[str], trade_confirmation_csvs: List[str]):
+        assert len(activity_csvs) == 1
+        with open(activity_csvs[0], newline='') as activity_fh:
             self._real_parse_activity_csv(csv.reader(activity_fh, delimiter=','), {
                 'Cash Report': self._parse_cash_report,
             })
@@ -32,11 +32,10 @@ class InteractiveBrokersCashReportParser(InteractiveBrokersReportParser):
 def parse_reports(activity_report_filepath: str) -> InteractiveBrokersCashReportParser:
     parser_object = InteractiveBrokersCashReportParser()
 
-    activity_report = Path(activity_report_filepath)
-    logging.info(f'Activity report {activity_report}')
+    logging.info(f'Activity report {activity_report_filepath}')
 
     logging.info('start reports parse')
-    parser_object.parse_csv(activity_report_filepath=activity_report)
+    parser_object.parse_csv(activity_csvs=[activity_report_filepath], trade_confirmation_csvs=[])
     logging.info(f'end reports parse {parser_object}')
 
     return parser_object
@@ -55,13 +54,20 @@ def show_report(cash: List[Cash]):
         begin_amount = dds_specific_round([op.amount for op in operations if op.description == 'Starting Cash'][0])
         end_amount = dds_specific_round([op.amount for op in operations if op.description == 'Ending Cash'][0])
 
-        deposits = [op.amount for op in operations if 'Cash' not in op.description and op.amount > Money(0, op.amount.currency)]
-        deposits_amount = dds_specific_round(sum(deposits) if deposits else Money(0, currency))
+        deposits_amount = Money(0, currency)
+        withdrawals_amount = Money(0, currency)
 
-        withdrawals = [op.amount for op in operations if 'Cash' not in op.description and op.amount < Money(0, op.amount.currency)]
-        withdrawals_amount = dds_specific_round(sum(withdrawals) if withdrawals else Money(0, currency))
+        for op in operations:
+            if 'Cash' not in op.description:
+                if op.amount > Money(0, op.amount.currency):
+                    deposits_amount += op.amount
+                else:
+                    withdrawals_amount += op.amount
 
-        report = [
+        deposits_amount = dds_specific_round(deposits_amount)
+        withdrawals_amount = dds_specific_round(withdrawals_amount)
+
+        report: List[List[Any]] = [
             [f'{currency.name} {currency.iso_numeric_code}', 'Сумма в тысячах единиц'],
             ['Остаток денежных средств на счете на начало отчетного периода', begin_amount],
             ['Зачислено денежных средств за отчетный период', deposits_amount],

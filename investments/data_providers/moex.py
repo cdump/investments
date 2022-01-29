@@ -2,6 +2,7 @@ import asyncio
 import datetime
 from typing import Optional
 
+import aiohttp
 import aiomoex  # type: ignore
 import pandas  # type: ignore
 
@@ -18,10 +19,10 @@ async def async_get_board_candles(ticker: Ticker, cache_dir: Optional[str], star
     if df is not None:
         return df
 
-    async with aiomoex.ISSClientSession():
+    async with aiohttp.ClientSession() as session:
         engine, market, board = '', '', ''
 
-        resp = await aiomoex.find_securities(ticker.symbol, columns=('secid', 'name', 'group', 'primary_boardid'))
+        resp = await aiomoex.find_securities(session, ticker.symbol, columns=('secid', 'name', 'group', 'primary_boardid'))
         for x in resp:
             if x['secid'] != ticker.symbol:
                 continue
@@ -31,7 +32,7 @@ async def async_get_board_candles(ticker: Ticker, cache_dir: Optional[str], star
         if engine == '':
             raise Exception(f'unknown ticker {ticker}')
 
-        rdata = await aiomoex.get_board_candles(ticker.symbol, start=start, end=end, interval=interval, engine=engine, market=market, board=board)
+        rdata = await aiomoex.get_board_candles(session, ticker.symbol, start=start, end=end, interval=interval, engine=engine, market=market, board=board)
         df = pandas.DataFrame(rdata)
         df.set_index('begin', inplace=True)
         df.drop(['value'], axis=1, inplace=True)
