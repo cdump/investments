@@ -258,10 +258,8 @@ Trades,Data,Order,Stocks,USD,VT,"2020-02-10, 09:38:00",-10,81.82,82.25,818.2,-1.
 Trades,SubTotal,,Stocks,USD,VT,,0,,,12,-2.01812674,0,9.981873,-13.2,"""
 
     lines = lines.split('\n')
-    p._settle_dates = {
-        ('VT', _parse_datetime('2020-01-31, 09:30:00')): _parse_date('2020-02-04'),
-        ('VT', _parse_datetime('2020-02-10, 09:38:00')): _parse_date('2020-02-12'),
-    }
+    p._settle_dates.put('VT', _parse_datetime('2020-01-31, 09:30:00'), _parse_date('2020-02-04'), '')
+    p._settle_dates.put('VT', _parse_datetime('2020-02-10, 09:38:00'), _parse_date('2020-02-12'), '')
 
     p._real_parse_activity_csv(csv.reader(lines, delimiter=','), {
         'Financial Instrument Information': p._parse_instrument_information,
@@ -308,3 +306,35 @@ def test_parse_date(case: str, expected: Any):
         res = _parse_date(case)
         assert res == expected
 
+
+def test_group_confirmation_reports_by_order_id():
+    """
+    Иногда в отчётах о подтверждении сделок появляется операция отмены исполнения и следом правильная строка
+    с данными об исполнении.
+    Выглядит как
+    - строка с датой исполнения A
+    - строка с типом TradeCancel
+    - строка с датой исполнения Б
+    и всё это по одной сделке.
+
+    Чтобы решить эту проблему автоматически, мы группируем строки в отчёте о подтверждении по параметру OrderId
+    и далее работаем только с последней строкой по каждому ордеру.
+    """
+    p = InteractiveBrokersReportParser()
+    lines = """"ClientAccountID","AccountAlias","Model","CurrencyPrimary","AssetClass","Symbol","Description","Conid","SecurityID","SecurityIDType","CUSIP","ISIN","ListingExchange","UnderlyingConid","UnderlyingSymbol","UnderlyingSecurityID","UnderlyingListingExchange","Issuer","Multiplier","Strike","Expiry","Put/Call","PrincipalAdjustFactor","TransactionType","TradeID","OrderID","ExecID","BrokerageOrderID","OrderReference","VolatilityOrderLink","ClearingFirmID","OrigTradePrice","OrigTradeDate","OrigTradeID","OrderTime","Date/Time","ReportDate","SettleDate","TradeDate","Exchange","Buy/Sell","Quantity","Price","Amount","Proceeds","Commission","BrokerExecutionCommission","BrokerClearingCommission","ThirdPartyExecutionCommission","ThirdPartyClearingCommission","ThirdPartyRegulatoryCommission","OtherCommission","CommissionCurrency","Tax","Code","OrderType","LevelOfDetail","TraderID","IsAPIOrder","AllocatedTo","AccruedInterest","RFQID","SerialNumber","DeliveryType","CommodityType","Fineness","Weight"
+"U3473202","","","EUR","STK","DXETd","X EURO STOXX 50 1C","59141442","LU0380865021","ISIN","","LU0380865021","IBIS","","","","","","1","","","","","ExchTrade","3567512579","1784592333","0000d349.603f512e.01.01","004ef3dd.000128a9.603f2319.0001","","","","0","","","2021-03-03,10:32:45","2021-03-03,10:32:45","2021-03-03","2021-03-05","2021-03-03","GETTEX","BUY","70","56.04","3922.8","-3922.8","-1.9614","-1.9614","0","0","0","0","0","EUR","0","O","LMT","EXECUTION","","N","","0","","","","","0.0","0.0 ()"
+"U3473202","","","EUR","STK","DXETd","X EURO STOXX 50 1C","59141442","LU0380865021","ISIN","","LU0380865021","IBIS","","","","","","1","","","","","ExchTrade","3571384109","1786706570","0000d349.60409e83.01.01","004ef3dd.000128a9.6040747b.0001","","","","0","","","2021-03-04,07:15:50","2021-03-04,07:15:50","2021-03-04","2021-03-08","2021-03-04","GETTEX","BUY","100","56.11","5611","-5611","-2.8055","-2.8055","0","0","0","0","0","EUR","0","O","LMT","EXECUTION","","N","","0","","","","","0.0","0.0 ()"
+"U3473202","","","EUR","STK","DXETd","X EURO STOXX 50 1C","59141442","LU0380865021","ISIN","","LU0380865021","IBIS","","","","","","1","","","","","TradeCancel","","1786706570","","","","","","56.11","2021-03-04","3571384109","","2021-03-04,07:15:50","2021-03-05","","2021-03-04","--","BUY (Ca.)","-100","56.11","-5611","5611","0","","","","","","","EUR","0","Ca","LMT","EXECUTION","","N","","0","","","","","0.0","0.0 ()"
+"U3473202","","","EUR","STK","DXETd","X EURO STOXX 50 1C","59141442","LU0380865021","ISIN","","LU0380865021","IBIS","","","","","","1","","","","","ExchTrade","3571384109","1786706570","0000d349.60409e83.01.01","004ef3dd.000128a9.6040747b.0001","","","","0","","","2021-03-04,07:15:50","2021-03-04,07:15:50","2021-03-05","2021-03-09","2021-03-04","GETTEX","BUY","100","56.11","5611","-5611","0","","","","","","","EUR","0","O","LMT","EXECUTION","","N","","0","","","","","0.0","0.0 ()"
+"U3473202","","","EUR","STK","DXETd","X EURO STOXX 50 1C","59141442","LU0380865021","ISIN","","LU0380865021","IBIS","","","","","","1","","","","","ExchTrade","3650141124","1831441961","0000d349.605d9a95.01.01","004ef3dd.000128a9.605d74ba.0001","","","","0","","","2021-03-26,06:37:20","2021-03-26,06:37:20","2021-03-26","2021-03-30","2021-03-26","GETTEX","BUY","15","58.38","875.7","-875.7","-1.25","-1.25","0","0","0","0","0","EUR","0","O","LMT","EXECUTION","","N","","0","","","","","0.0","0.0 ()\""""
+    lines = lines.split('\n')
+
+    p._parse_trade_confirmation_csv(csv.reader(lines, delimiter=','))
+
+    assert len(p._settle_dates) == 3
+    assert {'1784592333', '1786706570', '1831441961'} == {
+        i.order_id
+        for i in p._settle_dates._settle_data.values()
+    }
+    assert p._settle_dates.get_date('DXETd', _parse_datetime('2021-03-04,07:15:50')) == _parse_date('2021-03-09')
+    assert p._settle_dates.get_date('DXETd', _parse_datetime('2021-03-03,10:32:45')) == _parse_date('2021-03-05')
