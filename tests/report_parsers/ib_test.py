@@ -233,11 +233,11 @@ Trades,Data,Order,Stocks,USD,NOK,"2020-04-06, 11:44:50","5,000",3.125,3.16,-6250
 Trades,SubTotal,,Stocks,USD,NOK,,"2,299.81",,,-8770.9,-14.1,8785,0,79.5,"""
 
     lines = lines.split('\n')
-    p._settle_dates = {
-        ('NOK', _parse_datetime('2020-04-03, 09:48:58')): _parse_date('2020-02-04'),
-        ('NOK', _parse_datetime('2020-04-06, 11:43:36')): _parse_date('2020-02-12'),
-        ('NOK', _parse_datetime('2020-04-06, 11:44:50')): _parse_date('2020-02-12'),
-    }
+
+    p._settle_dates.put('NOK', _parse_datetime('2020-04-03, 09:48:58'), _parse_date('2020-02-04'), 'a')
+    p._settle_dates.put('NOK', _parse_datetime('2020-04-06, 11:43:36'), _parse_date('2020-02-12'), 'b')
+    p._settle_dates.put('NOK', _parse_datetime('2020-04-06, 11:44:50'), _parse_date('2020-02-12'), 'c')
+
     p._real_parse_activity_csv(csv.reader(lines, delimiter=','), {
         'Financial Instrument Information': p._parse_instrument_information,
         'Trades': p._parse_trades,

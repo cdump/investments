@@ -281,13 +281,13 @@ class InteractiveBrokersReportParser:
 
         dt = _parse_datetime(f['Date/Time'])
 
-        settle_date_item = self._settle_dates.get(ticker.symbol, dt)
-        assert settle_date_item is not None
+        settle_date = self._settle_dates.get_date(ticker.symbol, dt)
+        assert settle_date is not None
 
         self._trades.append(Trade(
             ticker=ticker,
             trade_date=dt,
-            settle_date=settle_date_item.settle_date,
+            settle_date=settle_date,
             quantity=_parse_trade_quantity(f['Quantity']) * quantity_multiplier,
             price=Money(f['T. Price'], currency),
             fee=Money(f['Comm/Fee'], currency),
