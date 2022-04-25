@@ -92,6 +92,7 @@ def prepare_fees_report(fees: List[Fee], cbr_client_usd: cbr.ExchangeRatesRUB, v
     ]
     df = pandas.DataFrame(df_data, columns=['N', operation_date_column, 'amount', 'description', 'tax_year'])
     df['rate'] = df.apply(lambda x: cbr_client_usd.get_rate(x['amount'].currency, x[operation_date_column]), axis=1)
+    df['amount_rub'] = df.apply(lambda x: cbr_client_usd.convert_to_rub(x['amount'], x[operation_date_column]), axis=1)
 
     if not verbose:
         df['abs_amount_del'] = df.apply(lambda x: abs(x.amount.amount), axis=1)
@@ -99,7 +100,6 @@ def prepare_fees_report(fees: List[Fee], cbr_client_usd: cbr.ExchangeRatesRUB, v
         df.drop(columns=['abs_amount_del'], inplace=True)
         df['N'] = range(1, len(df) + 1)
 
-    df['amount_rub'] = df.apply(lambda x: cbr_client_usd.convert_to_rub(x['amount'], x[operation_date_column]), axis=1)
     return df
 
 
