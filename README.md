@@ -18,6 +18,7 @@ $ pip3 install investments --upgrade --user
 - раздельный результат сделок по акциям и опционам + дивиденды
 - учёт начисленных процентов на остаток по счету
 - учёт комисий по сделкам
+- подготовка пояснительной записки к 3-НДФЛ в PDF формате
 - пока **НЕ** поддерживаются валюты CNH, ILS, MXN, NZD
 - пока **НЕ** поддерживаются сплиты
 - пока **НЕ** поддерживаются сделки Forex, сделка пропускается и выводится сообщение о том, что это может повлиять на итоговый отчет
@@ -32,6 +33,21 @@ $ python3 -m investments.ibtax --activity-reports-dir /path/to/activity/dir --co
 Отчеты `activity` & `confirmation` должны:
 - быть выгружены из IB в формате CSV
 - лежать в разных директориях (см. *Подготовка отчетов Interactive Brokers*)
+
+#### Просмотр неокруглённых цифр в расчётах
+```
+$ python3 -m investments.ibtax --verbose --activity-reports-dir /path/to/activity/dir --confirmation-reports-dir /path/to/confirmation/dir
+```
+
+#### Экпорт отчёта в pdf файл
+```
+$ python3 -m investments.ibtax --save-to /path/to/ibtax-report.pdf --activity-reports-dir /path/to/activity/dir --confirmation-reports-dir /path/to/confirmation/dir
+```
+
+#### Подготовка пояснительной записки с расчёами для подачи 3-НДФЛ
+```
+$ python3 -m investments.ibtax --years=2020 --report-type ndfl --save-to /path/to/ibtax-report.pdf --activity-reports-dir /path/to/activity/dir --confirmation-reports-dir /path/to/confirmation/dir
+```
 
 
 ## Утилита ibdds
@@ -93,7 +109,7 @@ $ poetry run ibtax
 usage: ibtax [-h] --activity-reports-dir ACTIVITY_REPORTS_DIR --confirmation-reports-dir CONFIRMATION_REPORTS_DIR [--cache-dir CACHE_DIR] [--years YEARS] [--verbose]
 ibtax: error: the following arguments are required: --activity-reports-dir, --confirmation-reports-dir
 
-$ vim investments/ibtax/ibtax.py # edit main file for example
+$ %apply u changes here%
 
 $ poetry run ibtax # run updated version
 ```

@@ -1,7 +1,7 @@
 import argparse
 import logging
 import os
-from typing import Iterable, List, Optional
+from typing import Dict, List, Type
 
 import pandas  # type: ignore
 
@@ -10,17 +10,11 @@ from investments.currency import Currency
 from investments.data_providers import cbr
 from investments.dividend import Dividend
 from investments.fees import Fee
+from investments.ibtax import report_presenter
 from investments.interests import Interest
 from investments.money import Money
 from investments.report_parsers.ib import InteractiveBrokersReportParser
-from investments.trades_fifo import FinishedTrade, PortfolioElement, TradesAnalyzer
-
-
-def apply_round_for_dataframe(source: pandas.DataFrame, columns: Iterable, digits: int = 2) -> pandas.DataFrame:
-    source[list(columns)] = source[list(columns)].applymap(
-        lambda x: x.round(digits=digits) if isinstance(x, Money) else round(x, digits),
-    )
-    return source
+from investments.trades_fifo import FinishedTrade, TradesAnalyzer
 
 
 def prepare_trades_report(finished_trades: List[FinishedTrade], cbr_client_usd: cbr.ExchangeRatesRUB) -> pandas.DataFrame:
@@ -37,6 +31,7 @@ def prepare_trades_report(finished_trades: List[FinishedTrade], cbr_client_usd: 
     df = pandas.DataFrame(finished_trades, columns=finished_trades[0].fields)
 
     df[trade_date_column] = df[trade_date_column].dt.normalize()
+    df['date'] = df[trade_date_column].dt.date
     df[tax_date_column] = pandas.to_datetime(df[tax_date_column])
 
     tax_years = df.groupby('N')[tax_date_column].max().map(lambda x: x.year).rename('tax_year')
@@ -115,128 +110,6 @@ def prepare_interests_report(interests: List[Interest], cbr_client_usd: cbr.Exch
     return df
 
 
-def _show_header(msg: str):
-    print(f'>>> {msg} <<<')
-
-
-def _show_fees_report(fees: pandas.DataFrame, year: int, verbose: bool):
-    fees_by_year = fees[fees['tax_year'] == year].drop(columns=['tax_year'])
-    if fees_by_year.empty:
-        return
-
-    feed_presenter = fees_by_year.copy(deep=True).set_index(['N', 'date'])
-    if not verbose:
-        apply_round_for_dataframe(feed_presenter, {'rate'}, 4)
-        apply_round_for_dataframe(feed_presenter, {'amount', 'amount_rub'}, 2)
-
-    _show_header('OTHER FEES')
-    print(feed_presenter.to_string())
-    print('\nTOTAL:\t', feed_presenter['amount_rub'].sum())
-    print('\n\n')
-
-
-def _show_interests_report(interests: pandas.DataFrame, year: int, verbose: bool):
-    interests_by_year = interests[interests['tax_year'] == year].drop(columns=['tax_year'])
-    if interests_by_year.empty:
-        return
-
-    interests_presenter = interests_by_year.copy(deep=True).set_index(['N', 'date'])
-    if not verbose:
-        apply_round_for_dataframe(interests_presenter, {'rate'}, 4)
-        apply_round_for_dataframe(interests_presenter, {'amount', 'amount_rub'}, 2)
-
-    _show_header('INTERESTS')
-    print(interests_presenter.to_string())
-    print('\n\n')
-
-
-def _show_dividends_report(dividends: pandas.DataFrame, year: int, verbose: bool):
-    dividends_by_year = dividends[dividends['tax_year'] == year].drop(columns=['tax_year'])
-    if dividends_by_year.empty:
-        return
-
-    dividends_by_year['N'] -= dividends_by_year['N'].iloc[0] - 1
-
-    dividends_presenter = dividends_by_year.copy(deep=True).set_index(['N', 'ticker', 'date'])
-    if not verbose:
-        apply_round_for_dataframe(dividends_presenter, {'rate'}, 4)
-        apply_round_for_dataframe(dividends_presenter, {'amount', 'amount_rub', 'tax_paid', 'tax_paid_rub'}, 2)
-        dividends_presenter = dividends_presenter.drop(columns=['tax_rate'])
-
-    _show_header('DIVIDENDS')
-    print(dividends_presenter.to_string())
-    print('\n\n')
-
-
-def _show_trades_report(trades: pandas.DataFrame, year: int, verbose: bool):
-    trades_by_year = trades[trades['tax_year'] == year].drop(columns=['tax_year'])
-    if trades_by_year.empty:
-        return
-
-    trades_by_year['N'] -= trades_by_year['N'].iloc[0] - 1
-
-    _show_header('TRADES')
-    trades_presenter = trades_by_year.copy(deep=True).set_index(['N', 'ticker', 'trade_date'])
-    if not verbose:
-        apply_round_for_dataframe(trades_presenter, {'price', 'total', 'total_rub', 'profit_rub'}, 2)
-        apply_round_for_dataframe(trades_presenter, {'fee', 'settle_rate', 'fee_rate'}, 4)
-        trades_presenter = trades_presenter.drop(columns=['fee_per_piece', 'fee_per_piece_rub', 'price_rub'])
-
-    print(trades_presenter.to_string())
-    print('\n\n')
-
-    _show_header('TRADES RESULTS BEFORE TAXES')
-    trades_summary_presenter = trades_by_year.copy(deep=True).groupby(lambda idx: (
-        trades_by_year.loc[idx, 'ticker'].kind,
-        'expenses' if trades_by_year.loc[idx, 'quantity'] > 0 else 'income',
-    ))['total_rub'].sum().reset_index()
-    trades_summary_presenter = trades_summary_presenter['index'].apply(pandas.Series).join(trades_summary_presenter).pivot(index=0, columns=1, values='total_rub')
-    trades_summary_presenter.index.name = ''
-    trades_summary_presenter.columns.name = ''
-    trades_summary_presenter['profit'] = trades_summary_presenter['income'] + trades_summary_presenter['expenses']
-
-    if not verbose:
-        apply_round_for_dataframe(trades_summary_presenter, {'expenses', 'income', 'profit'}, 2)
-
-    print(trades_summary_presenter.reset_index().to_string())
-    print('\n\n')
-
-
-def show_portfolio_report(portfolio: List[PortfolioElement]):
-    _show_header('PORTFOLIO')
-    for elem in portfolio:
-        print(f'{elem.ticker}\tx\t{elem.quantity}')
-    print('\n\n')
-
-
-def show_report(trades: Optional[pandas.DataFrame], dividends: Optional[pandas.DataFrame],
-                fees: Optional[pandas.DataFrame], interests: Optional[pandas.DataFrame],
-                filter_years: List[int], verbose: bool):  # noqa: WPS318,WPS319
-    years = set()
-    for report in (trades, dividends, fees, interests):
-        if report is not None:
-            years |= set(report['tax_year'].unique())
-
-    for year in years:  # noqa: WPS426
-        if filter_years and (year not in filter_years):
-            continue
-        print('\n', '______' * 8, f'  {year}  ', '______' * 8, '\n')
-
-        if dividends is not None:
-            _show_dividends_report(dividends, year, verbose)
-
-        if trades is not None:
-            _show_trades_report(trades, year, verbose)
-
-        if fees is not None:
-            _show_fees_report(fees, year, verbose)
-
-        if interests is not None:
-            _show_interests_report(interests, year, verbose)
-
-        print('______' * 8, f'EOF {year}', '______' * 8, '\n\n\n')
-
-
 def csvs_in_dir(directory: str):
     ret = []
     for filename in os.scandir(directory):
@@ -270,13 +143,21 @@ def parse_reports(activity_reports_dir: str, confirmation_reports_dir: str) -> I
 
 
 def main():
+    available_report_types: Dict[str, Type[report_presenter.ReportPresenter]] = {
+        'native': report_presenter.NativeReportPresenter,
+        'ndfl': report_presenter.NdflDetailsReportPresenter,
+    }
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--activity-reports-dir', type=str, required=True, help='directory with InteractiveBrokers .csv activity reports')
     parser.add_argument('--confirmation-reports-dir', type=str, required=True, help='directory with InteractiveBrokers .csv confirmation reports')
     parser.add_argument('--cache-dir', type=str, default='.', help='directory for caching (CBR RUB exchange rates)')
     parser.add_argument('--years', type=lambda x: [int(v.strip()) for v in x.split(',')], default=[], help='comma separated years for final report, omit for all')
-    parser.add_argument('--verbose', nargs='?', default=False, const=True, help='do not "prune" reversed dividends, show dividends tax percent, etc.')
+    parser.add_argument('--verbose', nargs='?', default=False, const=True, help='do not "prune" reversed dividends, show dividends tax percent, disable rounding & etc.')
     parser.add_argument('--quiet', nargs='?', default=False, const=True, help='suppress non-error messages')
+    parser.add_argument('--report-type', type=str, default='native', choices=available_report_types.keys(), help='report type [native by default]')
+    parser.add_argument('--save-to', type=str, default=None, help='filepath for save report')
+
     args = parser.parse_args()
 
     if args.verbose:
@@ -299,7 +180,6 @@ def main():
         logging.error('no trades found')
         return
 
-    # fixme first_year without dividends
     first_year = min(trades[0].trade_date.year, dividends[0].date.year) if dividends else trades[0].trade_date.year
     cbr_client_usd = cbr.ExchangeRatesRUB(year_from=first_year, cache_dir=args.cache_dir)
 
@@ -313,8 +193,9 @@ def main():
 
     trades_report = prepare_trades_report(finished_trades, cbr_client_usd) if finished_trades else None
 
-    show_report(trades_report, dividends_report, fees_report, interests_report, args.years, args.verbose)
-    show_portfolio_report(portfolio)
+    presenter = available_report_types.get(args.report_type)(args.verbose, args.save_to)
+    presenter.prepare_report(trades_report, dividends_report, fees_report, interests_report, portfolio, args.years)
+    presenter.present()
 
 
 if __name__ == '__main__':
