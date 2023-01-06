@@ -46,7 +46,7 @@ def dds_specific_round(source_amount: Money) -> Money:
 
 
 def show_report(cash: List[Cash]):
-    currencies = set(map(lambda x: x.amount.currency, cash))
+    currencies = {x.amount.currency for x in cash}
     logging.info(f'currency={currencies}')
 
     for currency in currencies:
