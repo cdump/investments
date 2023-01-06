@@ -186,6 +186,7 @@ def main():
         logging.error('no trades found')
         return
 
+    # fixme(?) first_year without dividends
     first_year = min(trades[0].trade_date.year, dividends[0].date.year) if dividends else trades[0].trade_date.year
     cbr_client_usd = cbr.ExchangeRatesRUB(year_from=first_year, cache_dir=args.cache_dir)
 

@@ -38,7 +38,7 @@ $ python3 -m investments.ibtax --activity-reports-dir /path/to/activity/dir --co
 $ python3 -m investments.ibtax --verbose --activity-reports-dir /path/to/activity/dir --confirmation-reports-dir /path/to/confirmation/dir
 ```
 
-#### Экпорт отчёта в pdf файл
+#### Экспорт отчёта в pdf файл
 ```
 $ python3 -m investments.ibtax --save-to /path/to/ibtax-report.pdf --activity-reports-dir /path/to/activity/dir --confirmation-reports-dir /path/to/confirmation/dir
 ```

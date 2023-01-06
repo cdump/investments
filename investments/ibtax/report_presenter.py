@@ -44,23 +44,45 @@ class ReportPresenter(ABC):
         if self.is_print_mode():
             print(self._output)
         else:
-            css_style = '@page { size: a4 landscape; margin: 1cm;} table, th, td {border: 2px solid black; border-collapse: collapse;}'
+            css_style = """
+            @page {
+                size: a4 landscape;
+                margin: 1cm;
+            }
+            table, th, td {
+                border: 2px solid black;
+                border-collapse: collapse;
+            }
+            div.pagebreak {
+                page-break-after: always;
+            }
+            h1.year {
+                page-break-before: always;
+            }
+            """
             HTML(string=self._output).write_pdf(self._dst_filepath, stylesheets=[CSS(string=css_style)])
 
     def _append_output(self, msg: str):
         self._output += msg
 
+    def _append_year_header(self, year: int):
+        if self.is_print_mode():
+            line = '______' * 8
+            self._append_output(f'\n>>> {line} {year} {line} <<<\n')
+        else:
+            self._append_output(f'<h1 class="year">{year}</h1>')
+
     def _append_header(self, header: str):
         if self.is_print_mode():
             self._append_output(f'\n>>> {header} <<<\n')
         else:
-            self._append_output(f'<br/><h1>{header}</h1><br/>')
+            self._append_output(f'<h2>{header}</h2>')
 
     def _start_new_page(self):
         if self.is_print_mode():
             self._append_output('\n\n')
         else:
-            self._append_output('<br/><br/>')
+            self._append_output('<div class="pagebreak"></div>')
 
     def _append_table(self, tabulate_data: Union[list, pandas.DataFrame], headers='keys', **kwargs) -> str:
         defaults = {
@@ -101,10 +123,6 @@ class NativeReportPresenter(ReportPresenter):
                 self._append_interests_report(interests, year)
 
         self._append_portfolio_report(portfolio)
-
-    def _append_year_header(self, year: int):
-        title_bracket = '______' * 8
-        self._append_header(f'{title_bracket}  {year}  {title_bracket}')
 
     def _append_portfolio_report(self, portfolio: List[PortfolioElement]):
         self._start_new_page()
