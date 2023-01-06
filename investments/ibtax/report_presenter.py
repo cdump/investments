@@ -68,7 +68,7 @@ class ReportPresenter(ABC):
     def _append_year_header(self, year: int):
         if self.is_print_mode():
             line = '______' * 8
-            self._append_output(f'\n>>> {line} {year} {line} <<<\n')
+            self._append_output(f'\n\n\n>>> {line} {year} {line} <<<\n')
         else:
             self._append_output(f'<h1 class="year">{year}</h1>')
 
