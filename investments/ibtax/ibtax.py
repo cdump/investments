@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import sys
 from typing import Iterable, List, Optional
 
 import pandas  # type: ignore
@@ -270,6 +271,8 @@ def parse_reports(activity_reports_dir: str, confirmation_reports_dir: str) -> I
 
 
 def main():
+    sys.stdout.reconfigure(encoding='utf-8')
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--activity-reports-dir', type=str, required=True, help='directory with InteractiveBrokers .csv activity reports')
     parser.add_argument('--confirmation-reports-dir', type=str, required=True, help='directory with InteractiveBrokers .csv confirmation reports')
