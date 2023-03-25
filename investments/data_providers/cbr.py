@@ -23,7 +23,7 @@ class ExchangeRatesRUB:
     _cache_dir: Optional[str]
     _frames_loaded: Dict[str, pandas.DataFrame]
 
-    def __init__(self, year_from: int = 2000, cache_dir: str = None):
+    def __init__(self, year_from: int = 2000, cache_dir: Optional[str] = None):
         self._year_from = year_from
         self._cache_dir = cache_dir
         self._frames_loaded = {}
@@ -63,7 +63,7 @@ class ExchangeRatesRUB:
             return
 
         end_date = (datetime.datetime.utcnow() + datetime.timedelta(days=1)).strftime('%d/%m/%Y')
-        r = requests.get(f'http://www.cbr.ru/scripts/XML_dynamic.asp?date_req1=01/01/{self._year_from}&date_req2={end_date}&VAL_NM_RQ={currency.cbr_code}')
+        r = requests.get(f'http://www.cbr.ru/scripts/XML_dynamic.asp?date_req1=01/01/{self._year_from}&date_req2={end_date}&VAL_NM_RQ={currency.cbr_code}', timeout=10)
 
         tree = ET.fromstring(r.text)
 

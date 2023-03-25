@@ -41,5 +41,5 @@ async def async_get_board_candles(ticker: Ticker, cache_dir: Optional[str], star
         return df
 
 
-def get_board_candles(ticker: Ticker, cache_dir: str = None, start='2016-01-01', end=None, interval=24):
+def get_board_candles(ticker: Ticker, cache_dir: Optional[str] = None, start='2016-01-01', end=None, interval=24):
     return asyncio.run(async_get_board_candles(ticker, cache_dir, start, end, interval))

@@ -150,8 +150,8 @@ def parse_reports(activity_reports_dir: str, confirmation_reports_dir: str) -> I
     return parser_object
 
 
-def main():
-    sys.stdout.reconfigure(encoding='utf-8')
+def main() -> None:
+    sys.stdout.reconfigure(encoding='utf-8')  # type: ignore
 
     available_report_types: Dict[str, Type[ReportPresenter]] = {
         'native': NativeReportPresenter,
@@ -203,7 +203,7 @@ def main():
 
     trades_report = prepare_trades_report(finished_trades, cbr_client_usd) if finished_trades else None
 
-    presenter = available_report_types.get(args.report_type)(args.verbose, args.save_to)
+    presenter = available_report_types[args.report_type](args.verbose, args.save_to)
     presenter.prepare_report(trades_report, dividends_report, fees_report, interests_report, portfolio, args.years)
     presenter.present()
 
