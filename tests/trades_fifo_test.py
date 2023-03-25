@@ -57,7 +57,7 @@ def test_analyze_trades_without_fees(trades, expect_trades):
         assert expected[2] == trade.quantity, f'expect trade quantity={expected[2]} but got {trade.quantity}'
 
 
-def test_trades_fees_simple():
+def test_trades_fees_simple() -> None:
     request_trades = []
     ticker = Ticker(symbol='VT', kind=TickerKind.Stock)
 
@@ -131,4 +131,3 @@ def test_trades_precision() -> List[FinishedTrade]:
     assert sell_trade.fee_per_piece.amount == Decimal('-0.101812674')
 
     return finished_trades
-

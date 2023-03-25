@@ -23,13 +23,14 @@ class DisplayMode(Enum):
 
 
 class ReportPresenter(ABC):
-    def __init__(self, verbose: bool = False, dst_filepath: Optional[str] = None):
+    def __init__(self, verbose: bool = False, dst_filepath: Optional[str] = None, date_format: str = '%d.%m.%Y'):
         assert dst_filepath is None or dst_filepath.endswith('.pdf')
 
         self._output: str = ''
         self._dst_filepath: Optional[str] = dst_filepath
         self._verbose: bool = verbose
         self._display_mode: DisplayMode = DisplayMode.PDF if dst_filepath else DisplayMode.PRINT
+        self._date_format = date_format
 
     def is_print_mode(self) -> bool:
         return self._display_mode == DisplayMode.PRINT
@@ -91,6 +92,10 @@ class ReportPresenter(ABC):
             'stralign': 'right',
             'tablefmt': 'presto' if self.is_print_mode() else 'html',
         }
+        if isinstance(tabulate_data, pandas.DataFrame):
+            for col in tabulate_data.select_dtypes(include=['datetime64']):
+                tabulate_data[col] = tabulate_data[col].dt.strftime(self._date_format)
+
         defaults.update(**kwargs)
         return tabulate(tabulate_data, headers=headers, **defaults)  # type: ignore
 
@@ -136,7 +141,6 @@ class NativeReportPresenter(ReportPresenter):
 
         dividends_by_year['N'] -= dividends_by_year['N'].iloc[0] - 1
         dividends_presenter = dividends_by_year.copy(deep=True)
-        dividends_presenter['date'] = dividends_presenter['date'].dt.date
         if not self._verbose:
             apply_round_for_dataframe(dividends_presenter, {'rate'}, 4)
             apply_round_for_dataframe(dividends_presenter, {'amount', 'amount_rub', 'tax_paid', 'tax_paid_rub'}, 2)
@@ -152,7 +156,6 @@ class NativeReportPresenter(ReportPresenter):
             return
 
         feed_presenter = fees_by_year.copy(deep=True)
-        feed_presenter['date'] = feed_presenter['date'].dt.date
         if not self._verbose:
             apply_round_for_dataframe(feed_presenter, {'rate'}, 4)
             apply_round_for_dataframe(feed_presenter, {'amount', 'amount_rub'}, 2)
@@ -167,7 +170,6 @@ class NativeReportPresenter(ReportPresenter):
             return
 
         interests_presenter = interests_by_year.copy(deep=True)
-        interests_presenter['date'] = interests_presenter['date'].dt.date
         if not self._verbose:
             apply_round_for_dataframe(interests_presenter, {'rate'}, 4)
             apply_round_for_dataframe(interests_presenter, {'amount', 'amount_rub'}, 2)
@@ -184,7 +186,6 @@ class NativeReportPresenter(ReportPresenter):
         trades_by_year['N'] -= trades_by_year['N'].iloc[0] - 1
 
         trades_presenter = trades_by_year.copy(deep=True).set_index(['N', 'ticker', 'trade_date'])
-        trades_presenter['settle_date'] = trades_presenter['settle_date'].dt.date
         trades_presenter['ticker_name'] = trades_presenter.apply(lambda x: str(x.name[1]), axis=1)
 
         trades_presenter = trades_presenter[[

@@ -53,7 +53,7 @@ class NamedRowsParser:
     def parse(self, row: List[str]) -> Dict[str, str]:
         error_msg = f'expect {len(self._fields)} rows {self._fields}, but got {len(row)} rows ({row})'
         assert len(row) == len(self._fields), error_msg
-        return {k: v for k, v in zip(self._fields, row)}
+        return dict(zip(self._fields, row))
 
 
 class TickersStorage:
@@ -107,7 +107,7 @@ class SettleDate(NamedTuple):
 
 
 class SettleDatesStorage:
-    def __init__(self):
+    def __init__(self) -> None:
         self._settle_data: Dict[Tuple[str, datetime.datetime], SettleDate] = {}
 
     def __len__(self):
@@ -145,13 +145,13 @@ class SettleDatesStorage:
 
 
 class InteractiveBrokersReportParser:
-    def __init__(self):
-        self._trades = []
-        self._dividends = []
+    def __init__(self) -> None:
+        self._trades: List[Trade] = []
+        self._dividends: List[Dividend] = []
         self._fees: List[Fee] = []
         self._interests: List[Interest] = []
         self._cash: List[Cash] = []
-        self._deposits_and_withdrawals = []
+        self._deposits_and_withdrawals: List[Tuple[datetime.date, Money]] = []
         self._tickers = TickersStorage()
         self._settle_dates = SettleDatesStorage()
 
@@ -167,7 +167,7 @@ class InteractiveBrokersReportParser:
         return self._dividends
 
     @property
-    def deposits_and_withdrawals(self) -> List:
+    def deposits_and_withdrawals(self) -> List[Tuple[datetime.date, Money]]:
         return self._deposits_and_withdrawals
 
     @property
