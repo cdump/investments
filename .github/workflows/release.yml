@@ -9,14 +9,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0 # need tags to generate release notes
 
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v1
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
       with:
-        python-version: '3.9'
+        python-version: '3.10'
 
     - name: Install poetry
       run: |
@@ -35,37 +35,24 @@ jobs:
       id: build
       run: |
         poetry build
-        echo ::set-output name=wheel_name::investments-${GITHUB_REF#refs/tags/}-py3-none-any.whl
+        echo "py_wheel_name=investments-${GITHUB_REF#refs/tags/}-py3-none-any.whl" >> $GITHUB_OUTPUT
 
     - name: Generate Release Notes
       run: |
         echo '## Changes since previous release:' > changelog.md
         git log --oneline $(git describe --tags --abbrev=0 HEAD^)..HEAD --pretty=format:"- [%h](https://github.com/cdump/investments/commit/%H) %s" >> changelog.md
 
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@latest
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Release
+      uses: softprops/action-gh-release@v1
       with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          name: Release ${{ github.ref_name }}
           draft: false
           prerelease: false
           body_path: changelog.md
+          files: |
+            dist/${{ steps.build.outputs.py_wheel_name }}
 
-    - name: Upload Release Asset
-      id: upload-release-asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_name: ${{ steps.build.outputs.wheel_name }}
-          asset_path: dist/${{ steps.build.outputs.wheel_name }}
-          asset_content_type: application/x-wheel+zip
-
-    - name: Publish to PyPI
+    - name: Publish
       env:
         POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
       run: |

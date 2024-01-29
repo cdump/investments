@@ -7,12 +7,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10']
+        python-version: ['3.8', '3.9', '3.10', '3.11']
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -23,17 +23,11 @@ jobs:
 
     - name: Install package
       run: |
-        poetry --version
         poetry install
 
-    - name: Run tests
+    - name: Run tests and linters
       run: |
         poetry run pytest -ra -v
-
-    - name: Run MyPy
-      run: |
+        poetry run ruff investments
+        poetry run ruff format --check investments
         poetry run mypy investments/
-
-    - name: Run flake8
-      run: |
-        poetry run flake8 investments/
