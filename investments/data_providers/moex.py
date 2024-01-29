@@ -26,8 +26,8 @@ async def async_get_board_candles(ticker: Ticker, cache_dir: Optional[str], star
         for x in resp:
             if x['secid'] != ticker.symbol:
                 continue
-            engine, market = x['group'].split('_')
-            board = x['primary_boardid']
+            engine, market = str(x['group']).split('_')
+            board = str(x['primary_boardid'])
 
         if engine == '':
             raise Exception(f'unknown ticker {ticker}')

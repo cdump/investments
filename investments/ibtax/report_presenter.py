@@ -11,7 +11,7 @@ from investments.trades_fifo import PortfolioElement
 
 
 def apply_round_for_dataframe(source: pandas.DataFrame, columns: Iterable, digits: int = 2) -> pandas.DataFrame:
-    source[list(columns)] = source[list(columns)].applymap(
+    source[list(columns)] = source[list(columns)].map(
         lambda x: x.round(digits=digits) if isinstance(x, Money) else round(x, digits),
     )
     return source
