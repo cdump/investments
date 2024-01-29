@@ -28,7 +28,7 @@ class DataFrameCache:
 
         if (datetime.datetime.utcnow() - datetime.datetime.utcfromtimestamp(mtime)) > self._ttl:
             return None
-        return pandas.read_pickle(self._cache_file)  # noqa:S301
+        return pandas.read_pickle(self._cache_file)
 
     def put(self, df: pandas.DataFrame):
         if self._cache_file is not None:

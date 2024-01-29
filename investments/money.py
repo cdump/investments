@@ -17,7 +17,7 @@ class Money:
     def amount(self) -> Decimal:
         return self._amount
 
-    def round(self, digits=0) -> 'Money':  # noqa: WPS125
+    def round(self, digits=0) -> 'Money':
         return Money(round(self._amount, digits), self._currency)
 
     def __repr__(self):

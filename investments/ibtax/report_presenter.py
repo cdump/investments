@@ -36,9 +36,15 @@ class ReportPresenter(ABC):
         return self._display_mode == DisplayMode.PRINT
 
     @abstractmethod
-    def prepare_report(self, trades: Optional[pandas.DataFrame], dividends: Optional[pandas.DataFrame],
-                       fees: Optional[pandas.DataFrame], interests: Optional[pandas.DataFrame],
-                       portfolio: List[PortfolioElement], filter_years: List[int]):  # noqa: WPS319
+    def prepare_report(
+        self,
+        trades: Optional[pandas.DataFrame],
+        dividends: Optional[pandas.DataFrame],
+        fees: Optional[pandas.DataFrame],
+        interests: Optional[pandas.DataFrame],
+        portfolio: List[PortfolioElement],
+        filter_years: List[int],
+    ):
         pass
 
     def present(self):
@@ -101,15 +107,21 @@ class ReportPresenter(ABC):
 
 
 class NativeReportPresenter(ReportPresenter):
-    def prepare_report(self, trades: Optional[pandas.DataFrame], dividends: Optional[pandas.DataFrame],
-                       fees: Optional[pandas.DataFrame], interests: Optional[pandas.DataFrame],
-                       portfolio: List[PortfolioElement], filter_years: List[int]):  # noqa: WPS318,WPS319
+    def prepare_report(
+        self,
+        trades: Optional[pandas.DataFrame],
+        dividends: Optional[pandas.DataFrame],
+        fees: Optional[pandas.DataFrame],
+        interests: Optional[pandas.DataFrame],
+        portfolio: List[PortfolioElement],
+        filter_years: List[int],
+    ):
         years = set()
         for report in (trades, dividends, fees, interests):
             if report is not None:
                 years |= set(report['tax_year'].unique())
 
-        for year in years:  # noqa: WPS426
+        for year in years:
             if filter_years and (year not in filter_years):
                 continue
 
@@ -188,10 +200,24 @@ class NativeReportPresenter(ReportPresenter):
         trades_presenter = trades_by_year.copy(deep=True).set_index(['N', 'ticker', 'trade_date'])
         trades_presenter['ticker_name'] = trades_presenter.apply(lambda x: str(x.name[1]), axis=1)
 
-        trades_presenter = trades_presenter[[
-            'ticker_name', 'date', 'settle_date', 'quantity', 'price', 'fee_per_piece', 'price_rub',
-            'fee_per_piece_rub', 'fee', 'total', 'total_rub', 'settle_rate', 'fee_rate', 'profit_rub',
-        ]]
+        trades_presenter = trades_presenter[
+            [
+                'ticker_name',
+                'date',
+                'settle_date',
+                'quantity',
+                'price',
+                'fee_per_piece',
+                'price_rub',
+                'fee_per_piece_rub',
+                'fee',
+                'total',
+                'total_rub',
+                'settle_rate',
+                'fee_rate',
+                'profit_rub',
+            ]
+        ]
 
         if not self._verbose:
             apply_round_for_dataframe(trades_presenter, {'price', 'total', 'total_rub', 'profit_rub'}, 2)
@@ -204,10 +230,17 @@ class NativeReportPresenter(ReportPresenter):
 
         self._start_new_page()
         self._append_header('TRADES RESULTS BEFORE TAXES')
-        trades_summary_presenter = trades_by_year.copy(deep=True).groupby(lambda idx: (
-            trades_by_year.loc[idx, 'ticker'].kind,
-            'expenses' if trades_by_year.loc[idx, 'quantity'] > 0 else 'income',
-        ))['total_rub'].sum().reset_index()
+        trades_summary_presenter = (
+            trades_by_year.copy(deep=True)
+            .groupby(
+                lambda idx: (
+                    trades_by_year.loc[idx, 'ticker'].kind,
+                    'expenses' if trades_by_year.loc[idx, 'quantity'] > 0 else 'income',
+                )
+            )['total_rub']
+            .sum()
+            .reset_index()
+        )
         trades_summary_presenter = trades_summary_presenter['index'].apply(pandas.Series).join(trades_summary_presenter).pivot(index=0, columns=1, values='total_rub')
         trades_summary_presenter.index.name = ''
         trades_summary_presenter.columns.name = ''

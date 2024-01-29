@@ -11,7 +11,7 @@ from investments.currency import Currency
 from investments.data_providers import cbr
 from investments.dividend import Dividend
 from investments.fees import Fee
-from investments.ibtax.report_presenter import NativeReportPresenter, ReportPresenter  # noqa: I001
+from investments.ibtax.report_presenter import NativeReportPresenter, ReportPresenter
 from investments.interests import Interest
 from investments.money import Money
 from investments.report_parsers.ib import InteractiveBrokersReportParser
@@ -89,10 +89,7 @@ def prepare_dividends_report(dividends: List[Dividend], cbr_client_usd: cbr.Exch
 
 def prepare_fees_report(fees: List[Fee], cbr_client_usd: cbr.ExchangeRatesRUB, verbose: bool) -> pandas.DataFrame:
     operation_date_column = 'date'
-    df_data = [
-        (i + 1, pandas.to_datetime(x.date), x.amount, x.description, x.date.year)
-        for i, x in enumerate(fees)
-    ]
+    df_data = [(i + 1, pandas.to_datetime(x.date), x.amount, x.description, x.date.year) for i, x in enumerate(fees)]
     df = pandas.DataFrame(df_data, columns=['N', operation_date_column, 'amount', 'description', 'tax_year'])
     df['rate'] = df.apply(lambda x: cbr_client_usd.get_rate(x['amount'].currency, x[operation_date_column]), axis=1)
     df['amount_rub'] = df.apply(lambda x: cbr_client_usd.convert_to_rub(x['amount'], x[operation_date_column]), axis=1)
@@ -108,10 +105,7 @@ def prepare_fees_report(fees: List[Fee], cbr_client_usd: cbr.ExchangeRatesRUB, v
 
 def prepare_interests_report(interests: List[Interest], cbr_client_usd: cbr.ExchangeRatesRUB) -> pandas.DataFrame:
     operation_date_column = 'date'
-    df_data = [
-        (i + 1, pandas.to_datetime(x.date), x.amount, x.description, x.date.year)
-        for i, x in enumerate(interests)
-    ]
+    df_data = [(i + 1, pandas.to_datetime(x.date), x.amount, x.description, x.date.year) for i, x in enumerate(interests)]
     df = pandas.DataFrame(df_data, columns=['N', operation_date_column, 'amount', 'description', 'tax_year'])
     df['rate'] = df.apply(lambda x: cbr_client_usd.get_rate(x['amount'].currency, x[operation_date_column]), axis=1)
     df['amount_rub'] = df.apply(lambda x: cbr_client_usd.convert_to_rub(x['amount'], x[operation_date_column]), axis=1)

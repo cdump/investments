@@ -24,9 +24,12 @@ class InteractiveBrokersCashReportParser(InteractiveBrokersReportParser):
     def parse_csv(self, *, activity_csvs: List[str], trade_confirmation_csvs: List[str]):
         assert len(activity_csvs) == 1
         with open(activity_csvs[0], newline='') as activity_fh:
-            self._real_parse_activity_csv(csv.reader(activity_fh, delimiter=','), {
-                'Cash Report': self._parse_cash_report,
-            })
+            self._real_parse_activity_csv(
+                csv.reader(activity_fh, delimiter=','),
+                {
+                    'Cash Report': self._parse_cash_report,
+                },
+            )
 
 
 def parse_reports(activity_report_filepath: str) -> InteractiveBrokersCashReportParser:

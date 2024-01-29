@@ -12,6 +12,7 @@ from investments.interests import Interest
 from investments.money import Money
 from investments.ticker import Ticker, TickerKind
 from investments.trade import Trade
+from investments.deposit import Deposit
 
 
 def _parse_datetime(strval: str) -> datetime.datetime:
@@ -53,7 +54,7 @@ class NamedRowsParser:
     def parse(self, row: List[str]) -> Dict[str, str]:
         error_msg = f'expect {len(self._fields)} rows {self._fields}, but got {len(row)} rows ({row})'
         assert len(row) == len(self._fields), error_msg
-        return dict(zip(self._fields, row))
+        return dict(zip(self._fields, row, strict=True))
 
 
 class TickersStorage:
@@ -151,12 +152,12 @@ class InteractiveBrokersReportParser:
         self._fees: List[Fee] = []
         self._interests: List[Interest] = []
         self._cash: List[Cash] = []
-        self._deposits_and_withdrawals: List[Tuple[datetime.date, Money]] = []
+        self._deposits: List[Deposit] = []
         self._tickers = TickersStorage()
         self._settle_dates = SettleDatesStorage()
 
     def __repr__(self):
-        return f'IbParser(trades={len(self.trades)}, dividends={len(self.dividends)}, fees={len(self.fees)}, interests={len(self.interests)})'  # noqa: WPS221
+        return f'IbParser(trades={len(self.trades)}, dividends={len(self.dividends)}, fees={len(self.fees)}, interests={len(self.interests)})'
 
     @property
     def trades(self) -> List[Trade]:
@@ -167,8 +168,8 @@ class InteractiveBrokersReportParser:
         return self._dividends
 
     @property
-    def deposits_and_withdrawals(self) -> List[Tuple[datetime.date, Money]]:
-        return self._deposits_and_withdrawals
+    def deposits(self) -> List[Deposit]:
+        return self._deposits
 
     @property
     def fees(self) -> List[Fee]:
@@ -186,9 +187,12 @@ class InteractiveBrokersReportParser:
         # 1. parse tickers info
         for ac_fname in activity_csvs:
             with open(ac_fname, newline='') as ac_fh:
-                self._real_parse_activity_csv(csv.reader(ac_fh, delimiter=','), {
-                    'Financial Instrument Information': self._parse_instrument_information,
-                })
+                self._real_parse_activity_csv(
+                    csv.reader(ac_fh, delimiter=','),
+                    {
+                        'Financial Instrument Information': self._parse_instrument_information,
+                    },
+                )
 
         # 2. parse settle_date from trade confirmation
         for tc_fname in trade_confirmation_csvs:
@@ -198,27 +202,30 @@ class InteractiveBrokersReportParser:
         # 3. parse everything else from activity (trades, dividends, ...)
         for activity_fname in activity_csvs:
             with open(activity_fname, newline='') as activity_fh:
-                self._real_parse_activity_csv(csv.reader(activity_fh, delimiter=','), {
-                    'Trades': self._parse_trades,
-                    'Dividends': self._parse_dividends,
-                    'Withholding Tax': self._parse_withholding_tax,
-                    'Deposits & Withdrawals': self._parse_deposits,
-                    # 'Account Information', 'Cash Report', 'Change in Dividend Accruals', 'Change in NAV',
-                    # 'Codes',
-                    'Fees': self._parse_fees,
-                    # 'Interest Accruals',
-                    'Interest': self._parse_interests,
-                    # 'Mark-to-Market Performance Summary',
-                    # 'Net Asset Value', 'Notes/Legal Notes', 'Open Positions', 'Realized & Unrealized Performance Summary',
-                    # 'Statement', '\ufeffStatement', 'Total P/L for Statement Period', 'Transaction Fees',
-                    'Cash Report': self._parse_cash_report,
-                })
+                self._real_parse_activity_csv(
+                    csv.reader(activity_fh, delimiter=','),
+                    {
+                        'Trades': self._parse_trades,
+                        'Dividends': self._parse_dividends,
+                        'Withholding Tax': self._parse_withholding_tax,
+                        'Deposits & Withdrawals': self._parse_deposits,
+                        # 'Account Information', 'Cash Report', 'Change in Dividend Accruals', 'Change in NAV',
+                        # 'Codes',
+                        'Fees': self._parse_fees,
+                        # 'Interest Accruals',
+                        'Interest': self._parse_interests,
+                        # 'Mark-to-Market Performance Summary',
+                        # 'Net Asset Value', 'Notes/Legal Notes', 'Open Positions', 'Realized & Unrealized Performance Summary',
+                        # 'Statement', '\ufeffStatement', 'Total P/L for Statement Period', 'Transaction Fees',
+                        'Cash Report': self._parse_cash_report,
+                    },
+                )
 
         # 4. sort
         self._trades.sort(key=lambda x: x.trade_date)
         self._dividends.sort(key=lambda x: x.date)
         self._interests.sort(key=lambda x: x.date)
-        self._deposits_and_withdrawals.sort(key=lambda x: x[0])
+        self._deposits.sort(key=lambda x: x.date)
         self._fees.sort(key=lambda x: x.date)
 
     def _parse_trade_confirmation_csv(self, csv_reader: Iterator[List[str]]):
@@ -284,14 +291,16 @@ class InteractiveBrokersReportParser:
         settle_date = self._settle_dates.get_date(ticker.symbol, dt)
         assert settle_date is not None
 
-        self._trades.append(Trade(
-            ticker=ticker,
-            trade_date=dt,
-            settle_date=settle_date,
-            quantity=_parse_trade_quantity(f['Quantity']) * quantity_multiplier,
-            price=Money(f['T. Price'], currency),
-            fee=Money(f['Comm/Fee'], currency),
-        ))
+        self._trades.append(
+            Trade(
+                ticker=ticker,
+                trade_date=dt,
+                settle_date=settle_date,
+                quantity=_parse_trade_quantity(f['Quantity']) * quantity_multiplier,
+                price=Money(f['T. Price'], currency),
+                fee=Money(f['Comm/Fee'], currency),
+            )
+        )
 
     def _parse_withholding_tax(self, f: Dict[str, str]):
         div_symbol, div_type = _parse_dividend_description(f['Description'])
@@ -304,7 +313,7 @@ class InteractiveBrokersReportParser:
         for i, v in enumerate(self._dividends):
             # difference in reports for the same past year, but generated in different time
             # read more at https://github.com/cdump/investments/issues/17
-            cash_choice_hack = (v.dtype == 'Cash Dividend' and div_type == 'Choice Dividend')
+            cash_choice_hack = v.dtype == 'Cash Dividend' and div_type == 'Choice Dividend'
 
             if v.ticker == ticker and v.date == date and (v.dtype == div_type or cash_choice_hack):
                 assert v.amount.currency == tax_amount.currency
@@ -341,19 +350,22 @@ class InteractiveBrokersReportParser:
                     return
 
         assert amount.amount > 0, f'unsupported dividend with non positive amount: {f}'
-        self._dividends.append(Dividend(
-            dtype=div_type,
-            ticker=ticker,
-            date=date,
-            amount=amount,
-            tax=Money(0, amount.currency),
-        ))
+        self._dividends.append(
+            Dividend(
+                dtype=div_type,
+                ticker=ticker,
+                date=date,
+                amount=amount,
+                tax=Money(0, amount.currency),
+            )
+        )
 
     def _parse_deposits(self, f: Dict[str, str]):
         currency = Currency.parse(f['Currency'])
         date = _parse_date(f['Settle Date'])
         amount = Money(f['Amount'], currency)
-        self._deposits_and_withdrawals.append((date, amount))
+        if amount.amount > 0:  # Withdrawals not supported yet
+            self._deposits.append(Deposit(date=date, amount=amount))
 
     def _parse_fees(self, f: Dict[str, str]):
         currency = Currency.parse(f['Currency'])

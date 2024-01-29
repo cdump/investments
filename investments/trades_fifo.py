@@ -53,7 +53,6 @@ class TradesAnalyzer:
 
             quantity = trade.quantity
             while quantity != 0:
-
                 matched_trade, q = active_trades.match(quantity, trade.ticker)
                 if matched_trade is None:
                     assert q == 0
@@ -63,8 +62,13 @@ class TradesAnalyzer:
                 total_cost = compute_total_cost(q, matched_trade.price, matched_trade.fee_per_piece)
 
                 finished_trade = FinishedTrade(
-                    finished_trade_id, trade.ticker, matched_trade.trade_date, matched_trade.settle_date, q,
-                    matched_trade.price, matched_trade.fee_per_piece,
+                    finished_trade_id,
+                    trade.ticker,
+                    matched_trade.trade_date,
+                    matched_trade.settle_date,
+                    q,
+                    matched_trade.price,
+                    matched_trade.fee_per_piece,
                 )
                 self._finished_trades.append(finished_trade)
 
@@ -80,15 +84,17 @@ class TradesAnalyzer:
 
             if total_profit is not None:
                 q = trade.quantity - quantity
-                self._finished_trades.append(FinishedTrade(
-                    finished_trade_id,
-                    trade.ticker,
-                    trade.trade_date,
-                    trade.settle_date,
-                    q,
-                    trade.price,
-                    trade.fee_per_piece,
-                ))
+                self._finished_trades.append(
+                    FinishedTrade(
+                        finished_trade_id,
+                        trade.ticker,
+                        trade.trade_date,
+                        trade.settle_date,
+                        q,
+                        trade.price,
+                        trade.fee_per_piece,
+                    )
+                )
                 finished_trade_id += 1
 
             if quantity != 0:
@@ -127,10 +133,12 @@ class _TradesFIFO:
         if self._portfolio[trade.ticker]:
             assert self.sign(quantity) == self.sign(self._portfolio[trade.ticker][0]['quantity'])
 
-        self._portfolio[trade.ticker].append({
-            'trade': trade,
-            'quantity': quantity,
-        })
+        self._portfolio[trade.ticker].append(
+            {
+                'trade': trade,
+                'quantity': quantity,
+            }
+        )
 
     def match(self, quantity: int, ticker: Ticker) -> Tuple[Optional[Trade], int]:
         """

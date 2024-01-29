@@ -1,6 +1,6 @@
 import datetime
 import re
-import xml.etree.ElementTree as ET  # noqa:N817
+import xml.etree.ElementTree as ET
 from typing import List, Optional
 
 from investments.currency import Currency
@@ -123,14 +123,16 @@ class OpenBrokerFRParser:
         assert float(f['quantity']) == qnty
         ticker = self._tickers.get(name=f['security_name'])
         dt = _parse_datetime(f['operation_date'])
-        self._trades.append(Trade(
-            ticker=ticker,
-            trade_date=dt,
-            settle_date=dt,
-            quantity=qnty,
-            price=Money(0, Currency.RUB),
-            fee=Money(0, Currency.RUB),
-        ))
+        self._trades.append(
+            Trade(
+                ticker=ticker,
+                trade_date=dt,
+                settle_date=dt,
+                quantity=qnty,
+                price=Money(0, Currency.RUB),
+                fee=Money(0, Currency.RUB),
+            )
+        )
 
     def _parse_money_payment(self, f, bonds_redemption):
         comment = f['comment']
@@ -145,26 +147,30 @@ class OpenBrokerFRParser:
                 name, tax = m1.group('name'), m1.group('tax')
             elif m2 is not None:
                 name, tax = m2.group('name'), '0'
-            self._dividends.append(Dividend(
-                dtype='',
-                ticker=self._tickers.get_by_dividend_name(name),
-                date=dt.date(),
-                amount=money_total,
-                tax=Money(tax, currency),
-            ))
+            self._dividends.append(
+                Dividend(
+                    dtype='',
+                    ticker=self._tickers.get_by_dividend_name(name),
+                    date=dt.date(),
+                    amount=money_total,
+                    tax=Money(tax, currency),
+                )
+            )
             return
 
         m = re.match(r'^Выплата дохода клиент (\w+) \(Выкуп (?P<name>[^,]+), (?P<isin>\w+), количество (?P<quantity>\d+)\) налог не удерживается$', comment)
         if m is not None:
             isin, quantity_buyout = m.group('isin'), int(m.group('quantity'))
-            self._trades.append(Trade(
-                ticker=self._tickers.get(isin=isin),
-                trade_date=dt,
-                settle_date=dt,
-                quantity=-1 * quantity_buyout,
-                price=money_total / quantity_buyout,
-                fee=Money(0, currency),
-            ))
+            self._trades.append(
+                Trade(
+                    ticker=self._tickers.get(isin=isin),
+                    trade_date=dt,
+                    settle_date=dt,
+                    quantity=-1 * quantity_buyout,
+                    price=money_total / quantity_buyout,
+                    fee=Money(0, currency),
+                )
+            )
             return
 
         m = re.match(r'^Выплата дохода клиент (\w+) \((?P<type>НКД \d+|Погашение) (?P<name>.*?)\) налог (к удержанию 0.00 рублей|не удерживается)$', comment)
@@ -172,28 +178,32 @@ class OpenBrokerFRParser:
             ticker = self._tickers.get(name=m.group('name'))
             if m.group('type').startswith('НКД'):
                 # WARNING: do not use for tax calculation!
-                for (price, quantity_coupons) in ((Money(0, currency), 1), (money_total, -1)):
-                    self._trades.append(Trade(
-                        ticker=ticker,
-                        trade_date=dt,
-                        settle_date=dt,
-                        quantity=quantity_coupons,
-                        price=price,
-                        fee=Money(0, currency),
-                    ))
+                for price, quantity_coupons in ((Money(0, currency), 1), (money_total, -1)):
+                    self._trades.append(
+                        Trade(
+                            ticker=ticker,
+                            trade_date=dt,
+                            settle_date=dt,
+                            quantity=quantity_coupons,
+                            price=price,
+                            fee=Money(0, currency),
+                        )
+                    )
                 return
 
             if m.group('type') == 'Погашение':
                 key = (ticker, dt)
                 quantity_redemption = bonds_redemption[key]
-                self._trades.append(Trade(
-                    ticker=ticker,
-                    trade_date=dt,
-                    settle_date=dt,
-                    quantity=quantity_redemption,
-                    price=-1 * money_total / int(quantity_redemption),
-                    fee=Money(0, currency),
-                ))
+                self._trades.append(
+                    Trade(
+                        ticker=ticker,
+                        trade_date=dt,
+                        settle_date=dt,
+                        quantity=quantity_redemption,
+                        price=-1 * money_total / int(quantity_redemption),
+                        fee=Money(0, currency),
+                    )
+                )
                 del bonds_redemption[key]
                 return
 
@@ -226,10 +236,12 @@ class OpenBrokerFRParser:
             comment = f['comment']
 
             if any(comment.startswith(p) for p in ('Поставлены на торги средства клиента', 'Перевод  денежных средств с клиента')):
-                self._deposits_and_withdrawals.append((
-                    _parse_datetime(f['operation_date']),
-                    Money(f['amount'], Currency.parse(f['currency_code'])),
-                ))
+                self._deposits_and_withdrawals.append(
+                    (
+                        _parse_datetime(f['operation_date']),
+                        Money(f['amount'], Currency.parse(f['currency_code'])),
+                    )
+                )
                 continue
 
             if comment.startswith('Выплата дохода клиент'):
@@ -277,11 +289,13 @@ class OpenBrokerFRParser:
             actual_volume = Money(f['volume_currency'], Currency.parse(f['price_currency_code']))
             assert expected_volume == actual_volume, f'expected_volume({expected_volume} = {qnty} * {price}) != ({actual_volume}) for {f}'
 
-            self._trades.append(Trade(
-                ticker=ticker,
-                trade_date=_parse_datetime(f['conclusion_time']),
-                settle_date=_parse_datetime(f['execution_date']),
-                quantity=int(qnty),
-                price=price,
-                fee=Money(f['broker_commission'], Currency.parse(f['broker_commission_currency_code'])),
-            ))
+            self._trades.append(
+                Trade(
+                    ticker=ticker,
+                    trade_date=_parse_datetime(f['conclusion_time']),
+                    settle_date=_parse_datetime(f['execution_date']),
+                    quantity=int(qnty),
+                    price=price,
+                    fee=Money(f['broker_commission'], Currency.parse(f['broker_commission_currency_code'])),
+                )
+            )
