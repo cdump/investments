@@ -22,19 +22,30 @@ ibdds = "investments.ibdds.ibdds:main"
 [tool.poetry.dependencies]
 python = "^3.8"
 pandas = "^1.5"
-requests = "^2.28"
+requests = "^2.31"
 tabulate = "^0.9"
 aiomoex = "^2.0"
 WeasyPrint = "^58.0"
 jinja2 = "^3.1"
 
-[tool.poetry.dev-dependencies]
-pytest = "^7.2"
-mypy = "^1.1"
-wemake-python-styleguide = "^0.17"
-types-requests = "^2.28"
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0"
+mypy = "^1.8"
+ruff = "^0.1.14"
 types-tabulate = "^0.9"
+types-requests = "^2.31"
 
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
+
+[tool.ruff]
+extend-select = ["B", "Q"]
+line-length = 200
+target-version = "py310"
+
+[tool.ruff.flake8-quotes]
+inline-quotes = "single"
+
+[tool.ruff.format]
+quote-style = "single"
