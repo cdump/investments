@@ -30,9 +30,9 @@ class Currency(Enum):
     SEK = (('SEK',), '752', 'R01770')
     CHF = (('CHF',), '756', 'R01775')
     TRY = (('TRY',), '949', 'R01700J')
+    CNH = (('CNH',), '156', 'R01375')  # CNY in cbr.ru
 
     # unknown currency for cbr.ru
-    # CNH = (('CNH',), 'unknown', 'unknown')
     # ILS = (('ILS',), '376', 'unknown')
     # MXN = (('MXN',), '484', 'unknown')
     # NZD = (('NZD',), '554', 'unknown')
@@ -45,12 +45,9 @@ class Currency(Enum):
     @staticmethod
     def parse(search: str):
         try:
-            return [
-                currency_item for _, currency_item in Currency.__members__.items()  # noqa: WPS609
-                if search in currency_item.aliases
-            ][0]
-        except IndexError:
-            raise ValueError(search)
+            return [currency_item for _, currency_item in Currency.__members__.items() if search in currency_item.aliases][0]
+        except IndexError as err:
+            raise ValueError(search) from err
 
     def __str__(self):
         return str(self.aliases[0])
