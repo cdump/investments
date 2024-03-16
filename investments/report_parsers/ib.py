@@ -16,7 +16,7 @@ from investments.deposit import Deposit
 
 
 def _parse_datetime(strval: str) -> datetime.datetime:
-    return datetime.datetime.strptime(strval.replace(' ', ''), '%Y-%m-%d,%H:%M:%S')
+    return datetime.datetime.strptime(strval.replace(' ', '').replace(';',','), '%Y-%m-%d,%H:%M:%S')
 
 
 def _parse_date(strval: str) -> datetime.date:
