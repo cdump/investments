@@ -45,7 +45,7 @@ def parse_reports(activity_report_filepath: str) -> InteractiveBrokersCashReport
 
 
 def dds_specific_round(source_amount: Money) -> Money:
-    return (source_amount / 1000).round(3)
+    return source_amount.round(2)
 
 
 def show_report(cash: List[Cash]):
@@ -71,7 +71,7 @@ def show_report(cash: List[Cash]):
         withdrawals_amount = dds_specific_round(withdrawals_amount)
 
         report: List[List[Any]] = [
-            [f'{currency.name} {currency.iso_numeric_code}', 'Сумма в тысячах единиц'],
+            [f'{currency.name} {currency.iso_numeric_code}', 'Сумма'],
             ['Остаток денежных средств на счете на начало отчетного периода', begin_amount],
             ['Зачислено денежных средств за отчетный период', deposits_amount],
             ['Списано денежных средств за отчетный период', abs(withdrawals_amount)],
