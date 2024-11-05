@@ -91,7 +91,7 @@ class ReportPresenter(ABC):
         else:
             self._append_output('<div class="pagebreak"></div>')
 
-    def _append_table(self, tabulate_data: Union[list, pandas.DataFrame], headers='keys', **kwargs) -> str:
+    def _append_table(self, tabulate_data: Union[list, pandas.DataFrame], headers: str | list[str] = 'keys', **kwargs) -> str:
         defaults = {
             'showindex': False,
             'numalign': 'decimal',
@@ -144,7 +144,8 @@ class NativeReportPresenter(ReportPresenter):
     def _append_portfolio_report(self, portfolio: List[PortfolioElement]):
         self._start_new_page()
         self._append_header('PORTFOLIO')
-        self._append_output(self._append_table([[str(elem.ticker), elem.quantity] for elem in portfolio], headers=['Ticker', 'Quantity'], colalign=('left',)))
+        if len(portfolio) > 0:
+            self._append_output(self._append_table([[str(elem.ticker), elem.quantity] for elem in portfolio], headers=['Ticker', 'Quantity'], colalign=('left',)))
 
     def _append_dividends_report(self, dividends: pandas.DataFrame, year: int):
         dividends_by_year = dividends[dividends['tax_year'] == year].drop(columns=['tax_year'])
