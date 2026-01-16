@@ -279,7 +279,10 @@ class InteractiveBrokersReportParser:
     def _parse_trades(self, f: Dict[str, str]):
         ticker_kind = _parse_tickerkind(f['Asset Category'])
         if ticker_kind == TickerKind.Forex:
-            logging.warning(f'Skipping FOREX trade (not supported yet), your final report may be incorrect! {f}')
+            logging.warning(
+                f'Skipping FOREX trade (not supported yet), your final report may be incorrect! '
+                f'{f.get("Date/Time")}, {f.get("Currency")} {f.get("Symbol")} {f.get("Quantity")} @ {f.get("T. Price")} = {f.get("Proceeds")}, commission = {f.get("Comm in USD")}'
+            )
             return
 
         ticker = self._tickers.get_ticker(f['Symbol'], ticker_kind)
