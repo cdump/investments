@@ -11,23 +11,18 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
 
-    - name: Install poetry
-      run: |
-        curl -sSL https://install.python-poetry.org | python
-        echo "$HOME/.poetry/bin" >> $GITHUB_PATH
+    - name: Set up Python ${{ matrix.python-version }}
+      run: uv python install ${{ matrix.python-version }}
 
     - name: Install package
-      run: |
-        poetry install
+      run: uv sync
 
     - name: Run tests and linters
       run: |
-        poetry run pytest -ra -v
-        poetry run ruff investments
-        poetry run ruff format --check investments
-        poetry run mypy investments/
+        uv run pytest -ra -v
+        uv run ruff check investments
+        uv run ruff format --check investments
+        uv run mypy investments/

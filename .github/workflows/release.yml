@@ -13,28 +13,22 @@ jobs:
       with:
         fetch-depth: 0 # need tags to generate release notes
 
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
 
-    - name: Install poetry
-      run: |
-        curl -sSL https://install.python-poetry.org | python
-        echo "$HOME/.poetry/bin" >> $GITHUB_PATH
+    - name: Set up Python 3.10
+      run: uv python install 3.10
 
     - name: Install package
-      run: |
-        poetry install
+      run: uv sync
 
     - name: Run tests
-      run: |
-        poetry run pytest -v
+      run: uv run pytest -v
 
     - name: Build wheel
       id: build
       run: |
-        poetry build
+        uv build
         echo "py_wheel_name=investments-${GITHUB_REF#refs/tags/}-py3-none-any.whl" >> $GITHUB_OUTPUT
 
     - name: Generate Release Notes
@@ -54,6 +48,5 @@ jobs:
 
     - name: Publish
       env:
-        POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
-      run: |
-        poetry publish
+        UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
+      run: uv publish

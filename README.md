@@ -7,7 +7,7 @@
 ```
 $ pip3 install investments --upgrade --user
 ```
-или с помощью [poetry](https://python-poetry.org/)
+или с помощью [uv](https://docs.astral.sh/uv/)
 
 ## Утилита ibtax
 Расчет прибыли Interactive Brokers для уплаты налогов для резидентов РФ
@@ -90,7 +90,7 @@ $ python3 -m investments.ibdds --activity-report-filepath /path/to/activity/repo
 
 ## Разворачивание проекта для внесения изменений
 
-- Install [poetry](https://python-poetry.org/docs/#installation)
+- Install [uv](https://docs.astral.sh/uv/getting-started/installation/)
 - Clone & modify & run
 
 ```
@@ -98,12 +98,12 @@ $ git clone https://github.com/cdump/investments
 
 $ cd investments
 
-$ poetry install
-$ poetry run ibtax
+$ uv sync
+$ uv run ibtax
 usage: ibtax [-h] --activity-reports-dir ACTIVITY_REPORTS_DIR --confirmation-reports-dir CONFIRMATION_REPORTS_DIR [--cache-dir CACHE_DIR] [--years YEARS] [--verbose]
 ibtax: error: the following arguments are required: --activity-reports-dir, --confirmation-reports-dir
 
 $ vim investments/ibtax/ibtax.py # edit main file for example
 
-$ poetry run ibtax # run updated version
+$ uv run ibtax # run updated version
 ```
