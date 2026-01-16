@@ -1,6 +1,6 @@
 [project]
 name = "investments"
-version = "0.2.0"
+version = "0.3.0"
 description = "Analysis of Interactive Brokers reports for tax reporting in Russia"
 license = "MIT"
 authors = [{name = "Maxim Andreev", email = "andreevmaxim@gmail.com"}]
