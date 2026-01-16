@@ -5,7 +5,7 @@ description = "Analysis of Interactive Brokers reports for tax reporting in Russ
 license = "MIT"
 authors = [{name = "Maxim Andreev", email = "andreevmaxim@gmail.com"}]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",
@@ -45,7 +45,7 @@ build-backend = "hatchling.build"
 
 [tool.ruff]
 line-length = 200
-target-version = "py310"
+target-version = "py312"
 
 [tool.ruff.lint]
 extend-select = ["B", "Q"]
