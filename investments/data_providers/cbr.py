@@ -79,7 +79,7 @@ class ExchangeRatesRUB:
         df.set_index(['date'], inplace=True)
         today = datetime.datetime.utcnow().date()
         df = df.reindex(pandas.date_range(df.index.min(), today))
-        df['rate'].fillna(method='pad', inplace=True)
+        df['rate'] = df['rate'].ffill()
 
         cache.put(df)
         self._frames_loaded[frame_key] = df
