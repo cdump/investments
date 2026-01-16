@@ -374,7 +374,7 @@ class InteractiveBrokersReportParser:
         currency = Currency.parse(f['Currency'])
         date = _parse_date(f['Date'])
         amount = Money(f['Amount'], currency)
-        description = f"{f['Subtitle']} - {f['Description']}"
+        description = f'{f["Subtitle"]} - {f["Description"]}'
         self._fees.append(Fee(date, amount, description))
 
     def _parse_interests(self, f: Dict[str, str]):

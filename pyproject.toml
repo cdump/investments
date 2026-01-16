@@ -44,11 +44,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.ruff]
-extend-select = ["B", "Q"]
 line-length = 200
 target-version = "py310"
 
-[tool.ruff.flake8-quotes]
+[tool.ruff.lint]
+extend-select = ["B", "Q"]
+
+[tool.ruff.lint.flake8-quotes]
 inline-quotes = "single"
 
 [tool.ruff.format]

@@ -104,7 +104,7 @@ class OpenBrokerFRParser:
         self._dividends.sort(key=lambda x: x.date)
         self._deposits_and_withdrawals.sort(key=lambda x: x[0])
 
-    def _parse_tickers(self, xml_tree: ET.ElementTree):
+    def _parse_tickers(self, xml_tree: ET.ElementTree[ET.Element]):
         for rec in xml_tree.findall('spot_portfolio_security_params/item'):
             f = rec.attrib
             if 'ticker' not in f and f['isin'] == 'JE00B5BCW814':
@@ -211,7 +211,7 @@ class OpenBrokerFRParser:
 
         raise Exception(f'unsupported description {f}')
 
-    def _parse_non_trade_operations(self, xml_tree: ET.ElementTree):
+    def _parse_non_trade_operations(self, xml_tree: ET.ElementTree[ET.Element]):
         bonds_redemption = {}
 
         for rec_non_trade in xml_tree.findall('spot_non_trade_security_operations/item'):
@@ -270,7 +270,7 @@ class OpenBrokerFRParser:
 
         assert not bonds_redemption, 'not empty'
 
-    def _parse_trades(self, xml_tree: ET.ElementTree):
+    def _parse_trades(self, xml_tree: ET.ElementTree[ET.Element]):
         for rec in xml_tree.findall('spot_main_deals_conclusion/item'):
             f = rec.attrib
             qnty = -1 * float(f['sell_qnty']) if 'sell_qnty' in f else float(f['buy_qnty'])
