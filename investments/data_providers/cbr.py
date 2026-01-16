@@ -62,7 +62,7 @@ class ExchangeRatesRUB:
             self._frames_loaded[frame_key] = df
             return
 
-        end_date = (datetime.datetime.utcnow() + datetime.timedelta(days=1)).strftime('%d/%m/%Y')
+        end_date = (datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=1)).strftime('%d/%m/%Y')
         r = requests.get(f'http://www.cbr.ru/scripts/XML_dynamic.asp?date_req1=01/01/{self._year_from}&date_req2={end_date}&VAL_NM_RQ={currency.cbr_code}', timeout=10)
 
         tree = ET.fromstring(r.text)
@@ -77,7 +77,7 @@ class ExchangeRatesRUB:
 
         df = pandas.DataFrame(rates_data, columns=['date', 'rate'])
         df.set_index(['date'], inplace=True)
-        today = datetime.datetime.utcnow().date()
+        today = datetime.datetime.now(datetime.UTC).date()
         df = df.reindex(pandas.date_range(df.index.min(), today))
         df['rate'] = df['rate'].ffill()
 

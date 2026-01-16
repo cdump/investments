@@ -99,7 +99,7 @@ def test_trades_fees_simple() -> None:
     assert sell_trade.fee_per_piece.amount == Decimal('-0.101812674')
 
 
-def test_trades_precision() -> List[FinishedTrade]:
+def get_trades_precision_testcase() -> List[FinishedTrade]:
     ticker = Ticker(symbol='VT', kind=TickerKind.Stock)
     test_case = [
         Trade(
@@ -120,7 +120,11 @@ def test_trades_precision() -> List[FinishedTrade]:
         )
     ]
 
-    finished_trades = TradesAnalyzer(test_case).finished_trades
+    return TradesAnalyzer(test_case).finished_trades
+
+
+def test_trades_precision():
+    finished_trades = get_trades_precision_testcase()
 
     buy_trade: FinishedTrade = finished_trades[0]
     assert buy_trade.price.amount == Decimal('80.62')
@@ -129,5 +133,3 @@ def test_trades_precision() -> List[FinishedTrade]:
     sell_trade: FinishedTrade = finished_trades[1]
     assert sell_trade.price.amount == Decimal('81.82')
     assert sell_trade.fee_per_piece.amount == Decimal('-0.101812674')
-
-    return finished_trades

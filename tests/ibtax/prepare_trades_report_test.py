@@ -7,7 +7,7 @@ from investments.ibtax.ibtax import prepare_trades_report
 from investments.money import Money
 from investments.ticker import Ticker, TickerKind
 from investments.trades_fifo import FinishedTrade
-from tests.trades_fifo_test import test_trades_precision
+from tests.trades_fifo_test import get_trades_precision_testcase
 
 
 def test_simple_trades():
@@ -83,7 +83,7 @@ def test_precision():
 
     """
 
-    test_case = test_trades_precision()
+    test_case = get_trades_precision_testcase()
 
     res: dict = prepare_trades_report(test_case, ExchangeRatesRUB()).to_dict()
 
