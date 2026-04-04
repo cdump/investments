@@ -47,7 +47,7 @@ def prepare_trades_report(finished_trades: List[FinishedTrade], cbr_client_usd: 
 
     df['price_rub'] = df.apply(lambda x: cbr_client_usd.convert_to_rub(x['price'], x[tax_date_column]), axis=1)
     df['fee_per_piece_rub'] = df.apply(lambda x: cbr_client_usd.convert_to_rub(x['fee_per_piece'], x[trade_date_column]), axis=1)
-    df['fee'] = df.apply(lambda x: (x['fee_per_piece'] * abs(x['quantity'])), axis=1)
+    df['fee'] = df.apply(lambda x: x['fee_per_piece'] * abs(x['quantity']), axis=1)
 
     df['total'] = df.apply(
         lambda x: compute_total_cost(x['quantity'], x['price'], x['fee_per_piece']),

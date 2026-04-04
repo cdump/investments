@@ -15,14 +15,8 @@ def test_simple_fees_verbose():
     ]
     cbr_client = ExchangeRatesRUB()
     res: dict = prepare_fees_report(fees, cbr_client, True).to_dict()
-    assert res['rate'] == {
-        0: Money(62.3934, Currency.RUB),
-        1: Money(62.3934, Currency.RUB)
-    }
-    assert res['amount_rub'] == {
-        0: Money(0.623934, Currency.RUB),
-        1: Money(-0.623934, Currency.RUB)
-    }
+    assert res['rate'] == {0: Money(62.3934, Currency.RUB), 1: Money(62.3934, Currency.RUB)}
+    assert res['amount_rub'] == {0: Money(0.623934, Currency.RUB), 1: Money(-0.623934, Currency.RUB)}
 
 
 def test_simple_fees_no_verbose():
@@ -34,4 +28,3 @@ def test_simple_fees_no_verbose():
     res: dict = prepare_fees_report(fees, cbr_client, False).to_dict()
     assert res['rate'] == {}
     assert res['amount_rub'] == {}
-

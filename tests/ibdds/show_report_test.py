@@ -12,8 +12,7 @@ def test_full_report(capsys):
         Cash('Starting Cash', Money(0.500, Currency.USD)),
         Cash('Ending Cash', Money(478.51, Currency.USD)),
         Cash('Unknown Cash', Money(100500, Currency.USD)),
-
-        Cash('Starting Cash', Money(0., Currency.RUB)),
+        Cash('Starting Cash', Money(0.0, Currency.RUB)),
         Cash('deposit 1', Money(10.1, Currency.RUB)),
         Cash('Ending Cash', Money(17.89, Currency.RUB)),
     ]
