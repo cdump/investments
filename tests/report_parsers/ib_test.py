@@ -180,7 +180,9 @@ Interest,Data,Total Interest in USD,,,0.13844211"""
 def test_parse_cash():
     p = InteractiveBrokersReportParser()
 
-    lines = """Cash Report,Header,Currency Summary,Currency,Total,Securities,Futures,Month to Date,Year to Date,
+    lines = """Account Information,Header,Field Name,Field Value
+Account Information,Data,Base Currency,USD
+Cash Report,Header,Currency Summary,Currency,Total,Securities,Futures,Month to Date,Year to Date,
 Cash Report,Data,Starting Cash,Base Currency Summary,0,0,0,,,
 Cash Report,Data,Commissions,Base Currency Summary,-82.64370531,-82.64370531,0,-8.62621762,-82.64370531,
 Cash Report,Data,Deposits,Base Currency Summary,65663.765,65663.765,0,1625.96,65663.765,
@@ -212,6 +214,7 @@ Cash Report,Data,Ending Settled Cash,USD,470.093845757,470.093845757,0,,,"""
 
     lines = lines.split('\n')
     p._real_parse_activity_csv(csv.reader(lines, delimiter=','), {
+        'Account Information': p._parse_account_information,
         'Cash Report': p._parse_cash_report,
     })
 

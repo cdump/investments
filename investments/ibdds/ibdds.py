@@ -27,6 +27,7 @@ class InteractiveBrokersCashReportParser(InteractiveBrokersReportParser):
             self._real_parse_activity_csv(
                 csv.reader(activity_fh, delimiter=','),
                 {
+                    'Account Information': self._parse_account_information,
                     'Cash Report': self._parse_cash_report,
                 },
             )

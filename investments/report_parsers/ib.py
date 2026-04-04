@@ -147,11 +147,13 @@ class SettleDatesStorage:
 
 class InteractiveBrokersReportParser:
     def __init__(self) -> None:
+        self._account_base_currency = None
         self._trades: List[Trade] = []
         self._dividends: List[Dividend] = []
         self._fees: List[Fee] = []
         self._interests: List[Interest] = []
         self._cash: List[Cash] = []
+        self._cash_base_currency: List[Cash] = []
         self._deposits: List[Deposit] = []
         self._tickers = TickersStorage()
         self._settle_dates = SettleDatesStorage()
@@ -181,7 +183,7 @@ class InteractiveBrokersReportParser:
 
     @property
     def cash(self) -> List[Cash]:
-        return self._cash
+        return self._cash if self._cash else self._cash_base_currency
 
     def parse_csv(self, *, activity_csvs: List[str], trade_confirmation_csvs: List[str]):
         # 1. parse tickers info
@@ -209,6 +211,7 @@ class InteractiveBrokersReportParser:
                         'Dividends': self._parse_dividends,
                         'Withholding Tax': self._parse_withholding_tax,
                         'Deposits & Withdrawals': self._parse_deposits,
+                        'Account Information': self._parse_account_information,
                         # 'Account Information', 'Cash Report', 'Change in Dividend Accruals', 'Change in NAV',
                         # 'Codes',
                         'Fees': self._parse_fees,
@@ -384,10 +387,19 @@ class InteractiveBrokersReportParser:
         description = f['Description']
         self._interests.append(Interest(date, amount, description))
 
+    def _parse_account_information(self, f: Dict[str, str]):
+        if f['Field Name'] == 'Base Currency':
+            self._account_base_currency = Currency.parse(f['Field Value'])
+
     def _parse_cash_report(self, f: Dict[str, str]):
         currency_code = f['Currency']
-        if currency_code != 'Base Currency Summary':
+        description = f['Currency Summary']
+
+        if currency_code == 'Base Currency Summary':
+            assert self._account_base_currency, 'account base currency is None'
+            amount = Money(f['Total'], self._account_base_currency)
+            self._cash_base_currency.append(Cash(description, amount))
+        else:
             currency = Currency.parse(currency_code)
-            description = f['Currency Summary']
             amount = Money(f['Total'], currency)
             self._cash.append(Cash(description, amount))
