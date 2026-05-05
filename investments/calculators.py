@@ -1,9 +1,10 @@
 """Калькулятор цены сделки с учётом комиссий."""
 
+from decimal import Decimal
 from investments.money import Money
 
 
-def compute_total_cost(quantity: int, price_per_piece: Money, fee_per_piece: Money) -> Money:
+def compute_total_cost(quantity: Decimal, price_per_piece: Money, fee_per_piece: Money) -> Money:
     """Полная сумма сделки (цена +/- комиссии)."""
     assert price_per_piece.currency is fee_per_piece.currency
     fee = abs(quantity) * abs(fee_per_piece)

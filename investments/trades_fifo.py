@@ -1,5 +1,6 @@
 import datetime
 from collections import defaultdict
+from decimal import Decimal
 from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Tuple
 
 from investments.calculators import compute_total_cost
@@ -19,7 +20,7 @@ class FinishedTrade(NamedTuple):
     settle_date: datetime.date
 
     # количество бумаг, положительное для операции покупки, отрицательное для операции продажи
-    quantity: int
+    quantity: Decimal
 
     # цена одной бумаги, всегда положительная
     price: Money
@@ -34,7 +35,7 @@ class FinishedTrade(NamedTuple):
 
 class PortfolioElement(NamedTuple):
     ticker: Ticker
-    quantity: int
+    quantity: Decimal
 
 
 class TradesAnalyzer:
@@ -116,16 +117,16 @@ class _TradesFIFO:
         self._portfolio = defaultdict(list)
 
     @staticmethod
-    def sign(v: int) -> int:
+    def sign(v: Decimal) -> int:
         assert v != 0
         return -1 if v < 0 else 1
 
-    def put(self, quantity: int, trade: Trade):
+    def put(self, quantity: Decimal, trade: Trade):
         """
         Put trade to the storage.
 
         Args:
-            quantity (int): The real quantity of the trade, >0 for BUY trades & <0 for SELL trades
+            quantity (Decimal): The real quantity of the trade, >0 for BUY trades & <0 for SELL trades
             trade (Trade): Base trade, quantity field not used
         """
         assert self.sign(quantity) == self.sign(trade.quantity)
@@ -140,12 +141,12 @@ class _TradesFIFO:
             }
         )
 
-    def match(self, quantity: int, ticker: Ticker) -> Tuple[Optional[Trade], int]:
+    def match(self, quantity: Decimal, ticker: Ticker) -> Tuple[Optional[Trade], int]:
         """
         Try to match trade.
 
         Args:
-            quantity (int): The real quantity of the trade, >0 for BUY trades & <0 for SELL trades
+            quantity (Decimal): The real quantity of the trade, >0 for BUY trades & <0 for SELL trades
             ticker (Ticker): Ticker to match
 
         Returns:

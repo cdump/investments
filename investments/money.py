@@ -67,15 +67,15 @@ class Money:
         return -1 * self.__sub__(other)
 
     def __mul__(self, mul):
-        if isinstance(mul, int):
+        if isinstance(mul, int) or isinstance(mul, Decimal):
             return Money(self._amount * mul, self._currency)
         return NotImplemented
 
-    def __rmul__(self, mul: int):
+    def __rmul__(self, mul):
         return self.__mul__(mul)
 
     def __truediv__(self, d):
-        if isinstance(d, int):
+        if isinstance(d, int) or isinstance(d, Decimal):
             return Money(self._amount / d, self._currency)
 
         if isinstance(d, Money):

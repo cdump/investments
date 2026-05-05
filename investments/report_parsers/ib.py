@@ -3,6 +3,7 @@ import datetime
 import logging
 import re
 from typing import Dict, Iterator, List, NamedTuple, Optional, Tuple
+from decimal import Decimal
 
 from investments.cash import Cash
 from investments.currency import Currency
@@ -23,8 +24,8 @@ def _parse_date(strval: str) -> datetime.date:
     return datetime.datetime.strptime(strval, '%Y-%m-%d').date()
 
 
-def _parse_trade_quantity(strval: str) -> int:
-    return int(strval.replace(',', ''))
+def _parse_trade_quantity(strval: str) -> Decimal:
+    return Decimal(strval.replace(',', ''))
 
 
 def _parse_dividend_description(description: str) -> Tuple[str, str]:
