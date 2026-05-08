@@ -141,7 +141,7 @@ class _TradesFIFO:
             }
         )
 
-    def match(self, quantity: Decimal, ticker: Ticker) -> Tuple[Optional[Trade], int]:
+    def match(self, quantity: Decimal, ticker: Ticker) -> Tuple[Optional[Trade], Decimal]:
         """
         Try to match trade.
 
@@ -154,14 +154,14 @@ class _TradesFIFO:
             quantity: Real quantity 'used' from matched_trade
         """
         if (ticker not in self._portfolio) or (not self._portfolio[ticker]):
-            return None, 0
+            return None, Decimal(0)
 
         front = self._portfolio[ticker][0]
         fqsign = self.sign(front['quantity'])
 
         # only match BUY with SELL and vice versa
         if self.sign(quantity) == fqsign:
-            return None, 0
+            return None, Decimal(0)
 
         q = fqsign * min(abs(quantity), abs(front['quantity']))
         if q == front['quantity']:

@@ -58,7 +58,7 @@ def test_trades_fees_simple() -> None:
             ticker=ticker,
             trade_date=datetime.datetime(year=2020, month=1, day=31),  # 63,0359₽
             settle_date=datetime.datetime(year=2020, month=2, day=4),  # 63,9091₽
-            quantity=10,
+            quantity=Decimal(10),
             price=Money(80.62, Currency.USD),
             fee=Money(-1, Currency.USD),
         )
@@ -69,7 +69,7 @@ def test_trades_fees_simple() -> None:
             ticker=ticker,
             trade_date=datetime.datetime(year=2020, month=2, day=10),  # 63,4720₽
             settle_date=datetime.datetime(year=2020, month=2, day=12),  # 63,9490₽
-            quantity=-10,
+            quantity=Decimal(-10),
             price=Money(81.82, Currency.USD),
             fee=Money(Decimal('-1.01812674'), Currency.USD),
         )
@@ -101,7 +101,7 @@ def get_trades_precision_testcase() -> List[FinishedTrade]:
             ticker=ticker,
             trade_date=datetime.datetime(2020, 1, 31, 9, 30),  # 63,0359₽
             settle_date=datetime.date(2020, 2, 4),  # 63,9091₽
-            quantity=10,
+            quantity=Decimal(10),
             price=Money('80.62', Currency.USD),
             fee=Money('-1', Currency.USD),
         ),
@@ -109,7 +109,7 @@ def get_trades_precision_testcase() -> List[FinishedTrade]:
             ticker=ticker,
             trade_date=datetime.datetime(2020, 2, 10, 9, 38),  # 63,4720₽
             settle_date=datetime.date(2020, 2, 12),  # 63,9490₽
-            quantity=-10,
+            quantity=Decimal(-10),
             price=Money('81.82', Currency.USD),
             fee=Money('-1.01812674', Currency.USD),
         ),
