@@ -1,5 +1,6 @@
 import datetime
 from typing import NamedTuple
+from decimal import Decimal
 
 from investments.money import Money
 from investments.ticker import Ticker
@@ -9,7 +10,7 @@ class Trade(NamedTuple):
     ticker: Ticker
     trade_date: datetime.datetime
     settle_date: datetime.date
-    quantity: int
+    quantity: Decimal
 
     # цена одной бумаги
     price: Money
