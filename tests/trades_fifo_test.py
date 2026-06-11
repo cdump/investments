@@ -42,7 +42,7 @@ def test_analyze_trades_without_fees(trades, expect_trades):
     finished_trades = TradesAnalyzer(request_trades).finished_trades
 
     assert len(finished_trades) == len(expect_trades), f'expect {len(expect_trades)} finished trades but got {len(finished_trades)}'
-    for trade, expected in zip(finished_trades, expect_trades):
+    for trade, expected in zip(finished_trades, expect_trades, strict=True):
         assert expected[0] == trade.N, f'expect trade N={expected[0]} but got {trade.N}'
         assert expected[1] == trade.ticker.symbol, f'expect trade ticker={expected[1]} but got {trade.ticker.symbol}'
         assert expected[2] == trade.quantity, f'expect trade quantity={expected[2]} but got {trade.quantity}'
