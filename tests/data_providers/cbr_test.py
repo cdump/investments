@@ -1,5 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
+from types import SimpleNamespace
 
 import pytest  # type: ignore
 from requests.exceptions import ConnectionError
@@ -51,3 +52,21 @@ def test_convert_to_rub():
 
     assert res.amount == Decimal('858.3066')
     assert res.currency == Currency.RUB
+
+
+def test_exchange_rate_uses_per_unit_rate(monkeypatch):
+    response = SimpleNamespace(
+        text="""<?xml version='1.0' encoding='windows-1251'?>
+        <ValCurs ID="R01820">
+            <Record Date="10.06.2026" Id="R01820">
+                <Nominal>100</Nominal>
+                <Value>44,7568</Value>
+                <VunitRate>0,447568</VunitRate>
+            </Record>
+        </ValCurs>"""
+    )
+    monkeypatch.setattr('investments.data_providers.cbr.requests.get', lambda *args, **kwargs: response)
+
+    rate = ExchangeRatesRUB(year_from=2026).get_rate(Currency.YEN, datetime(2026, 6, 10))
+
+    assert rate == Money('0.447568', Currency.RUB)

@@ -71,9 +71,16 @@ class ExchangeRatesRUB:
         for rec in tree.findall('Record'):
             assert rec.get('Id') == currency.cbr_code
             d = datetime.datetime.strptime(rec.attrib['Date'], '%d.%m.%Y').date()
-            v = rec.findtext('Value')
-            assert isinstance(v, str)
-            rates_data.append((d, Money(v.replace(',', '.'), Currency.RUB)))
+            unit_rate = rec.findtext('VunitRate')
+            if unit_rate is not None:
+                rate = Money(unit_rate.replace(',', '.'), Currency.RUB)
+            else:
+                value = rec.findtext('Value')
+                nominal = rec.findtext('Nominal')
+                assert isinstance(value, str)
+                assert isinstance(nominal, str)
+                rate = Money(value.replace(',', '.'), Currency.RUB) / int(nominal)
+            rates_data.append((d, rate))
 
         df = pandas.DataFrame(rates_data, columns=['date', 'rate'])
         df.set_index(['date'], inplace=True)

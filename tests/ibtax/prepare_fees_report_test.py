@@ -1,5 +1,4 @@
 import datetime
-from decimal import Decimal
 
 from investments.currency import Currency
 from investments.money import Money
@@ -28,3 +27,26 @@ def test_simple_fees_no_verbose():
     res: dict = prepare_fees_report(fees, cbr_client, False).to_dict()
     assert res['rate'] == {}
     assert res['amount_rub'] == {}
+
+
+def test_same_sign_fees_are_not_treated_as_reversals():
+    fees = [
+        Fee(date=datetime.date(2024, 1, 1), amount=Money(-1, Currency.RUB), description='Same fee'),
+        Fee(date=datetime.date(2024, 1, 1), amount=Money(-1, Currency.RUB), description='Same fee'),
+    ]
+
+    res = prepare_fees_report(fees, ExchangeRatesRUB(), False)
+
+    assert res['amount'].tolist() == [Money(-1, Currency.RUB), Money(-1, Currency.RUB)]
+
+
+def test_fee_reversals_are_matched_one_to_one():
+    fees = [
+        Fee(date=datetime.date(2024, 1, 1), amount=Money(-1, Currency.RUB), description='Same fee'),
+        Fee(date=datetime.date(2024, 1, 1), amount=Money(-1, Currency.RUB), description='Same fee'),
+        Fee(date=datetime.date(2024, 1, 1), amount=Money(1, Currency.RUB), description='Same fee'),
+    ]
+
+    res = prepare_fees_report(fees, ExchangeRatesRUB(), False)
+
+    assert res['amount'].tolist() == [Money(-1, Currency.RUB)]

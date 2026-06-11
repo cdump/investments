@@ -96,8 +96,12 @@ def prepare_fees_report(fees: List[Fee], cbr_client_usd: cbr.ExchangeRatesRUB, v
 
     if not verbose:
         df['abs_amount_del'] = df.apply(lambda x: abs(x.amount.amount), axis=1)
-        df.drop_duplicates(subset=[operation_date_column, 'description', 'abs_amount_del'], keep=False, inplace=True)
-        df.drop(columns=['abs_amount_del'], inplace=True)
+        df['currency_del'] = df.apply(lambda x: x.amount.currency, axis=1)
+        df['sign_del'] = df.apply(lambda x: 1 if x.amount.amount > 0 else -1 if x.amount.amount < 0 else 0, axis=1)
+        reversal_key = [operation_date_column, 'description', 'currency_del', 'abs_amount_del']
+        df['reversal_number_del'] = df.groupby([*reversal_key, 'sign_del']).cumcount()
+        df.drop_duplicates(subset=[*reversal_key, 'reversal_number_del'], keep=False, inplace=True)
+        df.drop(columns=['abs_amount_del', 'currency_del', 'sign_del', 'reversal_number_del'], inplace=True)
         df['N'] = range(1, len(df) + 1)
 
     return df
